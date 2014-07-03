@@ -35,7 +35,9 @@ wrapper.py
 如果要修改，找到wrapper.py的如下两行：
 
 if __name__ == '__main__':
+
     STEP = 1000        <- 每块1000个单词
+
     MAX_PROCESS = 15   <- 开15个进程
 
 进程个数的上限视个人PC的配置和网速而定，PC性能好可以开二三十个甚至更多
