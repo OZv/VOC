@@ -114,9 +114,9 @@ with(c.style){
 function l(c){
 var url="http://s3.amazonaws.com/audio.vocabulary.com/1.0/us/"+c.previousSibling.value+".mp3";
 alert(url);
-var audioElement=document.createElement("audio");
-audioElement.setAttribute("src",url);
-audioElement.play();
+var e=document.createElement("audio");
+e.setAttribute("src",url);
+e.play();
 }
 document.onclick=function(){
 var l=document.getElementsByTagName('span');
@@ -154,10 +154,4 @@ t.push(encodeURI(u[i].childNodes[1].innerText));
 alert('zzz');
 for(var i=0;i<Z.length;i++)
 Z[i].push(t[i]);
-try{
-    window.AudioContext = window.AudioContext||window.webkitAudioContext;
-    xt = new AudioContext();
-}catch(e){
-    alert('Web Audio API is not supported in this browser');
-}
 }
