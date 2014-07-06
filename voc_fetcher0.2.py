@@ -628,7 +628,7 @@ class WordData:
         style = {}
         style['div.t'] = 'font-family:Tahoma'
         style['div.b'] = 'color:blue;font-size:120%'
-        TITLE = '<div class="b t"id="v5A"><a id="%s"><a/><b>%s</b>'
+        TITLE = '<div class="b t"id="v5A"><a id="%s"></a><b>%s</b>'
 #        AUDIO = ' <audio src="http://s3.amazonaws.com/audio.vocabulary.com/1.0/us/%s.mp3">Play</audio>'
         AUDIO = '<input type="hidden"value="%s">'
         style['div.m'] = 'margin-top:0.5em'
