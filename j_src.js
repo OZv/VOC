@@ -124,6 +124,12 @@ with(c.style){
 	cursor="pointer";
 }
 }
+function l(f){
+var u="http://s3.amazonaws.com/audio.vocabulary.com/1.0/us/"+f+".mp3";
+var a=document.createElement("audio");
+a.setAttribute("src",u);
+a.play();
+}
 document.onclick=function(){
 var l=document.getElementsByTagName('span');
 var m=document.getElementsByTagName('div');
