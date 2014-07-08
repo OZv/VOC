@@ -117,7 +117,8 @@ try{
 var a=document.createElement("audio");
 a.setAttribute("src",u);
 a.play();
-}finally{
+}catch(e){}
+finally{
 c.style.border="";
 }
 }
