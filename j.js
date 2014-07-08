@@ -22,8 +22,7 @@ var d=w[3]?'&domain='+w[3]:'';
 var u="http://corpus.vocabulary.com/api/1.0/examples.json?query="+w[5]+"&maxResults=5&startOffset="+w[1]+d;
 if(x instanceof XMLHttpRequest)
 x.open("GET",u,true);
-else
-x.open("GET",u);
+else x.open("GET",u);
 x.send();
 }
 function n(c,w){
@@ -147,6 +146,7 @@ backgroundColor="#CEE3F6";
 }
 }
 document.onclick=function(){
+if(x){
 var l=document.getElementsByTagName('span');
 var m=document.getElementsByTagName('div');
 for(var i=0;i<l.length;i++){
@@ -156,6 +156,7 @@ l[i].style.visibility="visible";
 for(var i=0;i<m.length;i++){
 if(m[i].id=='mIq')
 m[i].style.display="none";
+}
 }
 };
 window.onload=function(){
