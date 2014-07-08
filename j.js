@@ -20,9 +20,10 @@ w[1]+=5;
 };
 var d=w[3]?'&domain='+w[3]:'';
 var u="http://corpus.vocabulary.com/api/1.0/examples.json?query="+w[5]+"&maxResults=5&startOffset="+w[1]+d;
-if(x instanceof XMLHttpRequest)
+if(x instanceof XMLHttpRequest){
+alert('ooo');
 x.open("GET",u,true);
-else{
+}else{
 x.open("GET",u);
 }
 x.send();
@@ -122,6 +123,7 @@ try{
 var a=document.createElement("audio");
 a.setAttribute("src",u);
 a.play();
+}catch(e){
 }finally{
 c.style.border="";
 }
