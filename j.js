@@ -20,12 +20,10 @@ w[1]+=5;
 };
 var d=w[3]?'&domain='+w[3]:'';
 var u="http://corpus.vocabulary.com/api/1.0/examples.json?query="+w[5]+"&maxResults=5&startOffset="+w[1]+d;
-if(x&&x instanceof XMLHttpRequest){
-alert('ooo');
+if(x instanceof XMLHttpRequest)
 x.open("GET",u,true);
-}else{
+else
 x.open("GET",u);
-}
 x.send();
 }
 function n(c,w){
@@ -166,6 +164,7 @@ x=new XMLHttpRequest();
 }else if(window.XDomainRequest){
 x=new XDomainRequest();
 }
+if(x){
 Z=new Array();
 var s='<span id="I9l"style="display:inline-block;margin:0.3em 1em 0.2em 0;padding-left:0.3em;line-height:110%;border:1px solid gray;border-radius:6px;width:8.5em;background-color:#F2F2F2;letter-spacing:1px;font-family:Arial;font-size:85%;color:gray;text-overflow:ellipsis;overflow:hidden;white-space:nowrap;cursor:pointer"onclick="e(this,event)">All Sources</span><div id="mIq"style="display:none;float:left;position:absolute;margin:-1.5em 0 0 -0.05em;padding-left:0.3em;border:1px solid gray;border-radius:6px;box-shadow:1.5px 1.5px 0 #D9D9D9;background-color:#F2F2F2;color:gray;letter-spacing:1px;line-height:140%;font-family:Arial;font-size:85%;text-overflow:ellipsis;overflow:hidden;white-space:nowrap;cursor:pointer"><span onclick="c(this,event,0,Z#)"style="display:block">All Sources</span><span onclick="c(this,event,1,Z#)"style="display:block">Fiction</span><span onclick="c(this,event,2,Z#)"style="display:block">Arts/Culture</span><span onclick="c(this,event,3,Z#)"style="display:block">News</span><span onclick="c(this,event,4,Z#)"style="display:block">Business</span><span onclick="c(this,event,5,Z#)"style="display:block">Sports</span><span onclick="c(this,event,6,Z#)"style="display:block">Science/Medicine</span><span onclick="c(this,event,7,Z#)"style="display:block">Technology</span></div><span style="display:inline-block;margin:0.3em 0 0.2em 0;line-height:110%;border:1px solid gray;border-radius:6px;width:8.8em;text-align:center;background-color:#F2F2F2;letter-spacing:1px;font-family:Arial;font-size:85%;text-overflow:ellipsis;overflow:hidden;white-space:nowrap"><a href="javascript:void(0);"style="text-decoration:none;color:gray;cursor:default">&lt;Prev</a><span style="padding:0.8em;color:gray">|</span><a href="javascript:void(0);"onclick="n(this,Z#)"style="text-decoration:none">Next&gt;</a></span>';
 var u=document.getElementsByTagName('div');
@@ -187,4 +186,9 @@ t.push(encodeURI(u[i].childNodes[1].innerText));
 }
 for(var i=0;i<Z.length;i++)
 Z[i].push(t[i]);
+}else{
+var m=document.getElementsByTagName('img');
+for(var i=0;i<m.length;i++)
+m[i].style.display="none";
+}
 }
