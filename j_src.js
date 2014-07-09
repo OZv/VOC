@@ -18,7 +18,7 @@ M=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 D=[null,"F","A","N","B","S","M","T"];
 function g(c,w){
 R(c);
-x.onload=x.onreadystatechange=function(){
+x.onload=function(){
 if(x.readyState==4&&x.status==200&&x.responseText){
 var h=r(x.responseText);
 if(h){
