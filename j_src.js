@@ -156,7 +156,7 @@ m[i].style.display="none";
 window.onload=function(){
 if(window.XMLHttpRequest)
 x=new XMLHttpRequest();
-if (!x||!("withCredentials"in x)){
+if(!x||!("withCredentials"in x)){
 if(window.XDomainRequest)
 x=new XDomainRequest();
 else x=null;
