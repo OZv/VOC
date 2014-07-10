@@ -121,6 +121,7 @@ var a=document.createElement("audio");
 a.setAttribute("src",u);
 a.play();
 }catch(e){
+alert('e');
 R(c);
 }finally{
 c.style.border="";
