@@ -120,6 +120,7 @@ try{
 var a=document.createElement("audio");
 a.setAttribute("src",u);
 a.play();
+alert('OK');
 }catch(e){
 alert('e');
 R(c);
