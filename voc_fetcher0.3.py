@@ -209,20 +209,6 @@ class Definition:
     def hasCode(self, type):
         return self.__hascode[type]
 
-    def prop(self):
-        return self.__prop
-
-    def meaning(self):
-        return self.__meaning
-
-    def example(self):
-        return self.__example
-
-    def synonym(self):
-        return self.__synonym
-
-    def type(self):
-        return self.__type
 # start formatting from here
     def htmlstring(self, type, style):
         sty = propstyle(self.__propstr)
@@ -267,17 +253,6 @@ class Example:
         date = __volume['dateAdded'][:10]
         self.__date = datetime.strptime(date, '%Y-%m-%d').strftime('%b %d, %Y')
 
-    def offsets(self):
-        return self.__offsets
-
-    def sentence(self):
-        return self.__sentence
-
-    def corpusname(self):
-        return self.__corpusname
-
-    def date(self):
-        return self.__date
 # start formatting from here
     @property
     def htmlstring(self):
@@ -297,6 +272,7 @@ class WordData:
             self.__hasblurb = digest[0]
             self.__hasType = digest[1]
             self.__dumped = digest[2]
+            self.__ffreq = digest[3]
         else:
             self.__title = None
             self.__prns = []
@@ -309,6 +285,7 @@ class WordData:
             self.__fuldefindex = [] # [[]]
             self.__hasType = False
             self.__hascode = [False, False]
+            self.__ffreq = -1
             self.__wdfrq = None
             self.__wdfmls = {}
             self.__usages = []
@@ -319,45 +296,16 @@ class WordData:
 
     @property
     def digest(self):
-        return [int(self.__hasblurb), int(self.__hasType), int(self.__dumped)]
+        return [int(self.__hasblurb), int(self.__hasType), int(self.__dumped),
+            self.__ffreq]
 
     @property
     def title(self):
         return self.__title
 
-    def prns(self):
-        return self.__prns
-
-    def sblurb(self):
-        return self.__sblurb
-
-    def lblurb(self):
-        return self.__lblurb
-
     @property
     def hasblurb(self):
         return self.__hasblurb
-
-    def chswdHd(self):
-        return self.__chswdHd
-
-    def chswdBd(self):
-        return self.__chswdBd
-
-    def fuldefs(self):
-        return self.__fuldefs
-
-    def fuldefindex(self):
-        return self.__fuldefindex
-
-    def wdfrq(self):
-        return self.__wdfrq
-
-    def wdfmls(self):
-        return self.__wdfmls
-
-    def usages(self):
-        return self.__usages
 
     def hasCode(self, type):
         return self.__hascode[type]
@@ -369,6 +317,10 @@ class WordData:
     @property
     def dumped(self):
         return self.__dumped
+
+    @property
+    def ffreq(self):
+        return self.__ffreq
 
     @property
     def htmlBasic(self):
@@ -467,17 +419,13 @@ class WordData:
                     div.a.extract()
                 self.__transfchswdBd(div)
 
-    def __rdmstr(self):
-        return ''.join(random.sample(string.ascii_letters, 1)+
-                    random.sample(string.ascii_letters+string.digits, 3))
-
     def __getfulldef(self, tag):
         grps = tag.find_all('div', {'class': 'group'})
+        idx = 1
         for grp in grps:
             defs = grp.find_all('div', class_=re.compile(r'sord\d$'))
             defl = []
             propd ={}
-            idx = 1
             for define in defs:
                 h3 = define.find('h3', {'class': 'definition'})
                 if h3 and h3.a:
@@ -486,7 +434,7 @@ class WordData:
                     del h3.a['title']
                     h3.a.string = h3.a.string.strip()
                     if not h3.a.string in propd:
-                        h3.a['name'] = self.__rdmstr()
+                        h3.a['name'] = '__%d__' % idx
                         propd[h3.a.string] = (h3.a['name'], idx)
                         idx += 1
                     else:
@@ -524,6 +472,7 @@ class WordData:
                         pgc = int(4000/ffreq)+1
                         self.__wdfrq = ''.join(['once / ', str(pgc),
                          ' page', 's' if pgc>1 else ''])
+                        self.__ffreq = pgc
                     else:
                         self.__wdfrq = 'extremely rare'
                 else:
@@ -578,7 +527,7 @@ class WordData:
                 for prop, name in defidx:
                     htmls.append(LNK % (name[0], propstyle(prop), prop))
         if htmls:
-            htmls.insert(0, '<div style="font-family:Helvetica"><b>')
+            htmls.insert(0, '<div style="font-family:Helvetica;word-break:break-all"><b>')
             htmls.append('</b></div>')
         return htmls
 
@@ -599,7 +548,7 @@ class WordData:
             htmls[-1] = htmls[-1].rstrip(':, ')
             htmls.append('|')
         html = ''.join(htmls).rstrip('|')
-        return ''.join([html.replace('|', '<span class=l>/</span>'), '</div>'])
+        return ''.join([html.replace('|', '<span class=h>/</span>'), '</div>'])
 
     def __formatfulldef(self, defl, type, style, lmargin=True):
         htmls = []
@@ -624,22 +573,33 @@ class WordData:
                 htmls.append('</div>')
         return htmls
 
+    def __rdmstr(self):
+        return ''.join(random.sample(string.ascii_letters, 1)+
+                    random.sample(string.ascii_letters+string.digits, 3))
+
+    def __fixanchor(self, html):
+        for item in self.__fuldefindex:
+            for k, v in item:
+                html = html.replace(v[0], self.__rdmstr())
+        return html
+
     def __htmlstring(self, type):
         style = {}
         style['div.t'] = 'font-family:Tahoma'
         style['div.b'] = 'color:blue;font-size:120%'
         TITLE = '<div class="b t"id="v5A"><a id="%s"></a><b>%s</b>'
-#        AUDIO = ' <audio src="http://s3.amazonaws.com/audio.vocabulary.com/1.0/us/%s.mp3">Play</audio>'
-        AUDIO = '<input type="hidden"value="%s">'
         style['div.m'] = 'margin-top:0.5em'
         MARGIN = '<div class=m></div>'
         acr = self.__rdmstr()
         htmls = [TITLE % (acr, self.__title)]
-        for prn in self.__prns:
-            htmls.append(AUDIO % prn)
+        if type != 1:
+            AUDIO = '<img src="p.png"style="margin-left:0.6em;width:16px;height:16px;cursor:pointer"onclick="l(this,\'%s\')"/>'
+            for prn in self.__prns:
+                htmls.append(AUDIO % prn)
         htmls.append('</div>')
         style['div.a'] = 'font-family:Arial'
         style['div.g'] = 'color:gray'
+        style['div.d'] = 'font-size:90%'
         style['div.n'] = 'color:navy'
         FREQ = '<div class="a g d">(%s)</div>'
         htmls.append(FREQ % self.__wdfrq)
@@ -666,7 +626,7 @@ class WordData:
                 htmls.append(MARGIN)
                 htmls.append(self.__formatsidebar())
             if self.__wdfmls:
-                style['span.l'] = 'color:gray;font-family:\'Trebuchet MS\';padding:0 0.3em 0 0.3em'
+                style['span.h'] = 'color:gray;font-family:\'Trebuchet MS\';padding:0 0.3em 0 0.3em'
                 htmls.append(MARGIN)
                 htmls.append(SECHD % 'WORD FAMILY')
                 htmls.append(self.__formatwdfmls(type))
@@ -680,7 +640,6 @@ class WordData:
                 htmls.append('</div></div>')
         htmls.append('<div class="a m">')
         style['span.t'] = 'font-family:Tahoma'
-        style['div.d'] = 'font-size:90%'
         style['div.y'] = 'font-family:Helvetica;color:#2F6771;font-weight:bold'
         style['div.p'] = 'padding-left:1em'
         if len(self.__fuldefs) == 1:
@@ -706,7 +665,8 @@ class WordData:
             sty.append('<script src="j.js"type="text/javascript"async></script><script src="http://rawgithub.com/OZv/E/G/j.js"type="text/javascript"async></script>')
         sty.extend(htmls)
         self.__dumped = True
-        return cleansp(''.join(sty)).replace('#_anchor_', ''.join(['#', acr]))
+        html = self.__fixanchor(cleansp(''.join(sty)))
+        return html.replace('#_anchor_', ''.join(['#', acr]))
 
 
 def fullpath(file, suffix=''):
@@ -754,15 +714,12 @@ def cleansp(html):
 
 
 def getpage(link, BASE_URL = 'http://www.vocabulary.com'):
-    try:
-        http = PoolManager()
-        r = http.request('GET', ''.join([BASE_URL, link]))
-        if r.status == 200:
-            return r.data
-        else:
-            return None
-    except Exception:
-        print("%s failed" % link)
+    http = PoolManager()
+    r = http.request('GET', ''.join([BASE_URL, link]))
+    if r.status == 200:
+        return r.data
+    else:
+        return None
 
 
 def getdata(word, domain=None):
@@ -781,7 +738,11 @@ def getdata(word, domain=None):
 
 
 def fetchdata(word):
-    page = getpage(''.join(['/dictionary/', urllib.quote(word)]))
+    page = None
+    try:
+        page = getpage(''.join(['/dictionary/', urllib.quote(word)]))
+    except Exception:
+        print "%s failed" % word
     exm = None
     if page:
         exm = getdata(word)
@@ -908,15 +869,14 @@ def dumpwords(mdict, sfx='', finished=True):
         f = [fullpath(fn, sfx) for fn in filelist]
         mod = 'a' if sfx else 'w'
         fw = [open(f[i], mod) for i in xrange(0, 3)]
-        MDXENTRY = '%s\n%s\n</>\n'
         try:
-            for word, entry in mdict.iteritems():
+            for word, entry in sorted(mdict.iteritems(), key=lambda d: d[0]):
                 if not entry.dumped:
                     if entry.hasblurb:
-                        fw[0].write(MDXENTRY % (word, entry.htmlLearners))
-                    fw[1].write(MDXENTRY % (word, entry.htmlBasic))
+                        fw[0].write('\n'.join([word, entry.htmlLearners, '</>\n']))
+                    fw[1].write('\n'.join([word, entry.htmlBasic, '</>\n']))
                     if entry.hasType:
-                        fw[2].write(MDXENTRY % (word, entry.htmlLinguistics))
+                        fw[2].write('\n'.join([word, entry.htmlLinguistics, '</>\n']))
             digest = json.dumps(mdict, cls=DjEncoder, separators=(',', ':'))
             dump(digest, 'digest')
         finally:
