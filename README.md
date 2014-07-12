@@ -9,7 +9,7 @@ j_src.js
 
 =============================抓词脚本及其用法============================
 
-voc_fetcher0.2.py
+voc_fetcher0.3.py
 
 为主程序，单线程下载及html->mdx格式转换
 
@@ -47,10 +47,10 @@ if __name__ == '__main__':
 如果下载单词量大建议多开进程，按目前默认15个的设置，148730个单词需要大概3~4小时下完
 
 8、双击wrapper.py，会自动生成mdict目录，并将单词分块开始下载。下载完后自动合并
-    如果双击voc_fetcher0.2.py，也会开始下载，但只支持一个进程
-    有一些错误检测和后期格式处理只在wrapper.py写了，本人懒得再往voc_fetcher0.2.py里加
+    如果双击voc_fetcher0.3.py，也会开始下载，但只支持一个进程
+    有一些错误检测和后期格式处理只在wrapper.py写了，本人懒得再往voc_fetcher0.3.py里加
     因此为了确保最后生成的文件正确，即使只打算开一个进程也推荐双击wrapper.py执行
 
-9、voc_fetcher0.2.py文件名不可修改，如果要改，要同时在wrapper.py里改下面一行
+9、voc_fetcher0.3.py文件名不可修改，如果要改，要同时在wrapper.py里改下面一行
 
-    arg.append('python.exe -u voc_fetcher0.2.py %s %d' % (sdir, i))
+    arg.append('python -u voc_fetcher0.3.py %s %d' % (sdir, i))
