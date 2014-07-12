@@ -161,6 +161,7 @@ class WordData:
             self.__hasblurb = digest[0]
             self.__hasType = digest[1]
             self.__dumped = digest[2]
+            self.__ffreq = digest[3]
 
     @property
     def hasblurb(self):
@@ -175,8 +176,13 @@ class WordData:
         return self.__dumped
 
     @property
+    def ffreq(self):
+        return self.__ffreq
+
+    @property
     def digest(self):
-        return [int(self.__hasblurb), int(self.__hasType), int(self.__dumped)]
+        return [int(self.__hasblurb), int(self.__hasType), int(self.__dumped),
+            self.__ffreq]
 
 
 class DjEncoder(json.JSONEncoder):
@@ -213,13 +219,13 @@ def multiprocess_fetcher(wordlist, STEP, MAX_PROCESS):
             dump('\n'.join(wl), file)
     pool = Pool(MAX_PROCESS)
     leni = times+2
-    while True:
+    while 1:
         arg = []
         for i in xrange(1, times+2):
             sdir = ''.join(['mdict', path.sep, '%d'%i, path.sep])
             file = fullpath(sdir, 'digest')
             if not os.path.exists(file):
-                arg.append('python.exe -u voc_fetcher0.2.py %s %d' % (sdir, i))
+                arg.append('python -u voc_fetcher0.3.py %s %d' % (sdir, i))
         lenr = len(arg)
         if len(arg) > 0:
             if lenr >= leni:
@@ -232,6 +238,89 @@ def multiprocess_fetcher(wordlist, STEP, MAX_PROCESS):
             break
         leni = lenr
     return times
+
+
+def makeentry(title, cnt, ordered, sty):
+    htmls = []
+    htmls.extend(sty)
+    htmls.extend(['<div class="b t"><b>', title,
+        '</b></div><div class="a g d">(', str(cnt), ' words)</div><br>',
+        '<div style="width:30%;height:30%;position:absolute;z-index:-999;visibility:hidden"onresize="w()"></div><div>'])
+    cata = {}
+    for word, entry in ordered:
+        cap = word[0:1].upper()
+        if cap>='A' and cap<='Z':
+            if cap in cata:
+                cata[cap].append(word)
+            else:
+                cata[cap] = [word]
+        else:
+            if '~' in cata:
+                cata['~'].append(word)
+            else:
+                cata['~'] = [word]
+    cata = sorted(cata.items(), key=lambda d: d[0])
+    idx = []
+    txt = []
+    i = 0
+    for k, vl in cata:
+        idx.append('<span onclick="v(this,%d)"' % i)
+        if i==0:
+            idx.append('style="color:#369;border:1px solid #369;background-color:#CEE3F6"')
+        idx.extend(['class=x>', k, '</span>'])
+        vl.sort()
+        txt.append('<div class=v>')
+        for v in vl:
+            txt.extend(['<a>', v, '</a><br>'])
+        txt[-1] = '</a>'
+        txt.append('</div>')
+        i += 1
+    htmls.extend(idx)
+    htmls.append('</div><input type="hidden"value="0"><hr style="height:1px;border:none;border-top:1px gray dashed"><div>')
+    htmls.extend(txt)
+    htmls.append('</div><div id="Z1w"class=t></div>')
+    return ''.join(htmls)
+
+
+def gen_wordlist(ordered):
+    pos = 0
+    for item in ordered:
+        if item[1].ffreq == -1:
+            pos += 1
+        else:
+            break
+    if pos>0 and pos<len(ordered):
+        head = ordered[:pos]
+        del ordered[:pos]
+        ordered.extend(head)
+    style = {}
+    style['a'] = 'text-decoration:none'
+    style['div.b'] = 'color:blue;font-size:120%'
+    style['div.t'] = 'font-family:Tahoma'
+    style['div.a'] = 'font-family:Arial'
+    style['div.g'] = 'color:gray'
+    style['div.d'] = 'font-size:90%'
+    style['div.v'] = 'display:none'
+    style['span.x'] = 'display:inline-block;margin:0.2em;width:1em;text-align:center;padding:0.1em 0.2em 0 0.2em;border:1px solid gray;border-radius:5px;background-color:#F2F2F2;font-family:Helvetica;font-weight:bold;color:gray;cursor:pointer'
+    sty = ['<style>']
+    for k, v in sorted(style.items(), key=lambda d: d[0]):
+        sty.extend([k, '{', v, '}'])
+    sty.extend(['</style><script>function v(c,n){with(c.parentNode){var b=nextSibling;var i=parseInt(b.value);if(i==n)return;b.value=n;with(childNodes[i].style){color="";border="1px solid gray";backgroundColor="";}b=b.nextSibling.nextSibling;u(b.childNodes[n],b.nextSibling);}with(c.style){color="#369";border="1px solid #369";backgroundColor="#CEE3F6";}}function d(w){var n=parseInt(w/90)+1;return n*90-w;}',
+    'function u(p,l){l.innerHTML=p.innerHTML;var n=document.createElement("span");n.style.visibility="hidden";l.appendChild(n);var h="";var w=0;for(var i=0;i<l.childNodes.length-1;i++){with(l.childNodes[i]){if(typeof(offsetWidth)=="undefined"){n.innerText=nodeValue;w=n.offsetWidth;h+="<span style=\\"display:inline-block;white-space:nowrap;margin-right:"+d(w)+"px\\">"+nodeValue+" </span>";}else if(offsetWidth){innerText+=" ";w=offsetWidth;with(style){marginRight=d(w)+"px";whiteSpace="nowrap";}h+="<span>"+outerHTML+" </span>";}}}n.innerText="";l.innerHTML=h;}',
+    'function w(){var v=document.getElementsByTagName("div");for(var i=0;i<v.length;i++){with(v[i]){if(id=="Z1w"){var n=parseInt(previousSibling.previousSibling.previousSibling.value);u(previousSibling.childNodes[n],v[i]);}}}}',
+    'document.onreadystatechange=function(){if(document.readyState=="interactive"){w();if(!window.ActiveXObject)window.onresize=w;}};</script>'])
+    levels = [2000, 1500, 1500, 1500, 1500, 2000, 2000, 3000, 2000, 3000]
+    ldict = {}
+    i = 1
+    start = 0
+    for cnt in levels:
+        if start+cnt > len(ordered):
+            break
+        title = 'Level-%d' % i
+        ldict[title] = makeentry(title, cnt, ordered[start:start+cnt], sty)
+        i += 1
+        start += cnt
+    return ldict
 
 
 def combinefiles(times):
@@ -249,9 +338,13 @@ def combinefiles(times):
         data = readdata(''.join([subdir, 'digest']))
         ddg.update(json.loads(data, object_hook=to_worddata))
     print "%d entries totally." % len(ddg.keys())
+    ordered = sorted(ddg.items(), key=lambda d: d[1].ffreq)
+    ldict = gen_wordlist(ordered)
+    dump('\n'.join(['\t'.join([w[0], str(w[1].ffreq)]) for w in ordered]),
+        ''.join([dir, 'wordfreq.txt']))
     digest = json.dumps(ddg, cls=DjEncoder, separators=(',', ':'))
     dump(digest, ''.join([dir, 'digest']))
-    pImg = re.compile(r'(?<=<)(img[^>]+)(?=>)', re.I)
+    pImg = re.compile(r'(?<=<)(img +(?!src\="p.png")[^>]+)(?=>)', re.I)
     pHref = re.compile(r'href=(?!["\'](?:entry|http|www.|javascript))[^>]+>', re.I)
     logs = []
     try:
@@ -274,12 +367,14 @@ def combinefiles(times):
                 logs.extend(img)
                 logs.extend(link)
             [fw[i].write(''.join([mdata[i], '\n']) if mdata[i] else '') for i in xrange(0, 3)]
+        for k, v in sorted(ldict.iteritems(), key=lambda d: d[0]):
+            [fw[i].write('\n'.join([k, addrefs(v, i), '</>\n'])) for i in [0, 2]]
     finally:
         [fw[i].close() for i in xrange(0, 3)]
     if logs:
         dump('\n'.join(logs), ''.join([dir, 'logs.txt']))
         print "Found some warnings, please look at %slogs.txt" % fullpath(dir)
-    print "".join(["\n".join(filelist), "\n", "digest"])
+    print "".join(["\n".join(filelist), "\n", "wordfreq.txt", "\n", "digest"])
     print "was generated at %s" % fullpath(dir)
 
 
