@@ -216,7 +216,7 @@ class Definition:
         if not k in style:
             style[k] = ''.join(['background-color:', styled[sty]])
         html = self.__prop % ''.join(['p ', sty])
-        htmls = ['%s<span class=t>%s</span>' % (html, self.__meaning)]
+        htmls = [html, ' <span class=t>', self.__meaning, '</span>']
         if type!=1 and self.__examples:
             htmls.append('<div class="d n">')
             for example in self.__examples:
@@ -513,7 +513,7 @@ class WordData:
 # start formatting from here
     def __formatdefindex(self, style):
         htmls = []
-        LNK = '<a href="entry://#%s"class="p %s">%s</a>'
+        LNK = '<a href="entry://#%s"class="p %s">%s</a> '
         if len(self.__fuldefindex) == 1:
             for prop, name in self.__fuldefindex[0]:
                 htmls.append(LNK % (name[0], propstyle(prop), prop))
@@ -604,7 +604,7 @@ class WordData:
         FREQ = '<div class="a g d">(%s)</div>'
         htmls.append(FREQ % self.__wdfrq)
         htmls.append('<br>')
-        style['a.p'] = 'text-decoration:none;padding:0 5px 1px;margin-right:3px;font-size:70%;font-weight:bold;color:white'
+        style['a.p'] = 'text-decoration:none;padding:0 5px 1px;font-size:70%;font-weight:bold;color:white'
         htmls.extend(self.__formatdefindex(style))
         HR = '<hr style="height:1px;border:none;border-top:1px gray dashed">'
         htmls.append(HR)
