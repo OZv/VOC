@@ -248,10 +248,19 @@ class Example:
     def __init__(self, rawdata):
         self.__offsets = rawdata['offsets']
         self.__sentence = rawdata['sentence']
-        __volume = rawdata['volume']
-        self.__corpusname = __volume['corpus']['name']
-        date = __volume['dateAdded'][:10]
-        self.__date = datetime.strptime(date, '%Y-%m-%d').strftime('%b %d, %Y')
+        vol = rawdata['volume']
+        self.__corpusname = vol['corpus']['name']
+        if self.__corpusname == 'Literature':
+            self.__corpusname = ''.join([vol['author'], ', <i>',
+                vol['title'], '</i>'])
+            self.__date = vol['datePublished'][:4]
+        else:
+            if 'datePublished' in vol:
+                date = datetime.strptime(vol['datePublished'][:10], '%Y-%m-%d')
+            else:
+                date = datetime.strptime(vol['dateAdded'][:10], '%Y-%m-%d')
+            self.__date = date.strftime('%b %d, %Y')
+
 
 # start formatting from here
     @property
@@ -527,7 +536,7 @@ class WordData:
                 for prop, name in defidx:
                     htmls.append(LNK % (name[0], propstyle(prop), prop))
         if htmls:
-            htmls.insert(0, '<div style="font-family:Helvetica;word-break:break-all"><b>')
+            htmls.insert(0, '<div style="font-family:Helvetica"><b>')
             htmls.append('</b></div>')
         return htmls
 
