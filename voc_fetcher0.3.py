@@ -722,18 +722,25 @@ def getpage(link, BASE_URL = 'http://www.vocabulary.com'):
         return None
 
 
-def getdata(word, domain=None):
-    link = ['/api/1.0/examples.json?query=', urllib.quote(word),
-        '&maxResults=5&startOffset=0']
-    if domain:
-        link.extend(['&domain=', domain])
-    page = getpage(''.join(link), 'http://corpus.vocabulary.com')
+def loaddata(page):
     data = None
     if page:
         try:
             data = json.loads(page)
         finally:
             return data
+    return data
+
+
+def getdata(word, domain=None):
+    link = ['/api/1.0/examples.json?query=', urllib.quote(word),
+        '&maxResults=5&startOffset=0']
+    if domain:
+        link.extend(['&domain=', domain])
+    data = loaddata(getpage(''.join(link), 'http://corpus.vocabulary.com'))
+    if data and len(data['result']['sentences'])==0:
+        link.append('&filter=2')
+        data = loaddata(getpage(''.join(link), 'http://corpus.vocabulary.com'))
     return data
 
 
