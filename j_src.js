@@ -32,8 +32,13 @@ w[1]+=5;
 }
 }
 };
+var f='';
+with(c.parentNode.parentNode.previousSibling){
+if(nodeName=='INPUT')
+	f="&filter="+value;
+}
 var d=w[3]?'&domain='+w[3]:'';
-var u="http://corpus.vocabulary.com/api/1.0/examples.json?query="+w[5]+"&maxResults=5&startOffset="+w[1]+d;
+var u="http://corpus.vocabulary.com/api/1.0/examples.json?query="+w[5]+"&maxResults=5&startOffset="+w[1]+d+f;
 if(x instanceof XMLHttpRequest)
 x.open("GET",u,true);
 else x.open("GET",u);
@@ -100,16 +105,19 @@ var f=offsets;
 s=sentence;
 s=s.substr(0,f[0])+'<b>'+s.substr(f[0],f[1]-f[0])+'</b>'+s.substr(f[1]);
 with(volume){
-var n=corpus.name;
-with(dateAdded){
-	var y=substr(0,4);
-	var m=M[parseInt(substr(5,2))-1];
-	var d=substr(8,2);
-	d= m+' '+d+', '+y;
+var t=('datePublished'in volume)?datePublished:dateAdded;
+var y=t.substr(0,4);
+var n=corpus.id;
+if(n=='LIT'||n=='GUT')
+n=author+', <i>'+title+'</i>';
+else{
+n=corpus.name;
+with(t)
+	y=M[parseInt(substr(5,2))-1]+' '+substr(8,2)+', '+y;
 }
 }
 }
-h+='<div class=n>'+s+'</div><div class="g r">'+n+'('+d+')</div>';
+h+='<div class=n>'+s+'</div><div class="g r">'+n+'('+y+')</div>';
 }
 return h;
 }
