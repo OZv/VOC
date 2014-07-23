@@ -249,17 +249,16 @@ class Example:
         self.__offsets = rawdata['offsets']
         self.__sentence = rawdata['sentence']
         vol = rawdata['volume']
-        self.__corpusname = vol['corpus']['name']
-        if self.__corpusname == 'Literature':
+        id = vol['corpus']['id']
+        date = 'datePublished' if 'datePublished' in vol else 'dateAdded'
+        if id=='LIT' or id=='GUT':
             self.__corpusname = ''.join([vol['author'], ', <i>',
                 vol['title'], '</i>'])
-            self.__date = vol['datePublished'][:4]
+            self.__date = vol[date][:4]
         else:
-            if 'datePublished' in vol:
-                date = datetime.strptime(vol['datePublished'][:10], '%Y-%m-%d')
-            else:
-                date = datetime.strptime(vol['dateAdded'][:10], '%Y-%m-%d')
-            self.__date = date.strftime('%b %d, %Y')
+            self.__corpusname = vol['corpus']['name']
+            dt = datetime.strptime(vol[date][:10], '%Y-%m-%d')
+            self.__date = dt.strftime('%b %d, %Y')
 
 
 # start formatting from here
@@ -276,7 +275,7 @@ class Example:
 
 class WordData:
 # word data structure
-    def __init__(self, word=None, worddef=None, usage=None, digest=None):
+    def __init__(self, word=None, worddef=None, usage=None, filter=None, digest=None):
         if digest:
             self.__hasblurb = digest[0]
             self.__hasType = digest[1]
@@ -300,6 +299,7 @@ class WordData:
             self.__usages = []
             self.__dumped = False
             self.__dd_ext = {}
+            self.__filter = filter
             if self.__initdef(word, worddef):
                 self.__initusage(usage)
 
@@ -643,6 +643,9 @@ class WordData:
                 style['div.r'] = 'font-size:80%'
                 htmls.append(MARGIN)
                 htmls.append(SECHD % 'USAGE EXAMPLES')
+                if self.__filter != '0':
+                    htmls.extend(['<input type="hidden"value="',
+                        self.__filter, '">'])
                 htmls.append('<div id="vUi"class=a><div>')
                 for usage in self.__usages:
                     htmls.append(usage.htmlstring)
@@ -731,7 +734,14 @@ def getpage(link, BASE_URL = 'http://www.vocabulary.com'):
         return None
 
 
-def loaddata(page):
+def getdata(word, filter, domain=None):
+    link = ['/api/1.0/examples.json?query=', urllib.quote(word),
+        '&maxResults=5&startOffset=0']
+    if domain:
+        link.extend(['&domain=', domain])
+    if filter != '0':
+        link.extend(['&filter=', filter])
+    page = getpage(''.join(link), 'http://corpus.vocabulary.com')
     data = None
     if page:
         try:
@@ -741,16 +751,12 @@ def loaddata(page):
     return data
 
 
-def getdata(word, domain=None):
-    link = ['/api/1.0/examples.json?query=', urllib.quote(word),
-        '&maxResults=5&startOffset=0']
-    if domain:
-        link.extend(['&domain=', domain])
-    data = loaddata(getpage(''.join(link), 'http://corpus.vocabulary.com'))
-    if data and len(data['result']['sentences'])==0:
-        link.append('&filter=2')
-        data = loaddata(getpage(''.join(link), 'http://corpus.vocabulary.com'))
-    return data
+def getfilter(page):
+    p = re.compile(r'<vcom:examples[^>]+> *</vcom:examples>', re.I)
+    m = p.search(page)
+    p = re.compile(r'filter="(\d)"', re.I)
+    m = p.search(m.group(0))
+    return m.group(1)
 
 
 def fetchdata(word):
@@ -760,9 +766,11 @@ def fetchdata(word):
     except Exception:
         print "%s failed" % word
     exm = None
+    filter = None
     if page:
-        exm = getdata(word)
-    return page, exm
+        filter = getfilter(page)
+        exm = getdata(word, filter)
+    return page, exm, filter
 
 
 def dummyfetchdata(word):
@@ -775,9 +783,11 @@ def dummyfetchdata(word):
     finally:
         fr.close()
     exm = None
+    filter = None
     if page:
-        exm = getdata(word)
-    return page, exm
+        filter = getfilter(page)
+        exm = getdata(word, filter)
+    return page, exm, filter
 
 
 def getwordlist(file):
@@ -797,9 +807,9 @@ def makewords(wordlist, mdict):
         count += 1
         if count % 100 == 0:
             print ".",
-        worddef, usages = fetchdata(word)
+        worddef, usages, filter = fetchdata(word)
         if worddef:
-            wordentry = WordData(word, worddef, usages)
+            wordentry = WordData(word, worddef, usages, filter)
             if wordentry.title:
                 if not word in mdict or not mdict[word].dumped:
                     mdict[word] = wordentry
