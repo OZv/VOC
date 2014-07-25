@@ -19,7 +19,6 @@
 ## GNU General Public License for more details.
 import os
 import re
-import time
 import json
 import string
 import random
@@ -35,6 +34,7 @@ from bs4 import BeautifulSoup
 
 ENTLINK = '<a href="entry://%s">%s</a>'
 styled = {'v': '#539007', 'n': '#e3412f', 'j': '#f8b002', 'd': '#684b9d'}
+http = PoolManager()
 dictType = None
 cleanTag = None
 dict = {}
@@ -543,11 +543,10 @@ class WordData:
         return htmls
 
     def __formatsidebar(self):
-        FIELD = '<fieldset class=a><legend><span class=d>CHOOSE YOUR WORDS</span></legend>%s</fieldset>'
-        html = '<div class="l t">%s</div>%s'
-        html %= (self.__chswdHd, self.__chswdBd)
-        html = FIELD % html
-        return html
+        return ['<fieldset class=a>',
+                '<legend><span class=d>CHOOSE YOUR WORDS</span></legend>',
+                '<div class="l t">', self.__chswdHd, '</div>',
+                self.__chswdBd, '</fieldset>']
 
     def __formatwdfmls(self, type):
         htmls = ['<div class=a>']
@@ -597,14 +596,13 @@ class WordData:
     def __htmlstring(self, type):
         style['div.t'] = 'font-family:\'Lucida Grande\''
         style['div.b'] = 'color:blue;font-weight:bold;font-size:120%'
-        TITLE = '<div class="b t"id="v5A"><a id="%s"></a>%s'
         style['div.m'] = 'margin-top:0.5em'
         style['div.v'] = 'display:none'
         MARGIN = '<div class=m></div>'
         acr = self.__rdmstr()
         htmls = [] if type==1 else ['<script src="j.js"type="text/javascript"async></script>']
-        htmls.append('<link rel="stylesheet"href="v.css"type="text/css">')
-        htmls.append(TITLE % (acr, self.__title))
+        htmls.extend(['<link rel="stylesheet"href="v.css"type="text/css">',
+            '<div class="b t"id="v5A"><a id="%s"></a>'%acr, self.__title])
         if type != 1:
             style['img.m'] = 'margin-left:0.6em;width:16px;height:16px;cursor:pointer'
             AUDIO = '<img src="p.png"onclick="l(this,\'%s\')"class=m>'
@@ -621,8 +619,7 @@ class WordData:
         style['a.p'] = 'text-decoration:none;padding:0 5px 1px;font-size:70%;font-weight:bold;color:white'
         htmls.extend(self.__formatdefindex(style))
         style['hr.s'] = 'height:1px;border:none;border-top:1px gray dashed'
-        HR = '<hr class=s>'
-        htmls.append(HR)
+        htmls.append('<hr class=s>')
         style['span.b'] = 'font-weight:bold;background-color:gray;color:white'
         if type != 1:
             if self.__hasblurb or self.__chswdHd:
@@ -641,7 +638,7 @@ class WordData:
                 style['fieldset.a'] = 'font-family:Arial;font-size:90%;border-radius:3px;border:1px dashed gray'
                 style['span.d'] = 'font-family:Helvetica;font-weight:bold'
                 htmls.append(MARGIN)
-                htmls.append(self.__formatsidebar())
+                htmls.extend(self.__formatsidebar())
             if self.__wdfmls:
                 style['span.h'] = 'color:gray;font-family:\'Trebuchet MS\';padding:0 0.3em 0 0.3em'
                 htmls.append(MARGIN)
@@ -687,8 +684,8 @@ class WordData:
         style['span.j'] = 'padding:0.8em;color:gray'
         style['span.p'] = 'display:inline-block;line-height:110%;border:1px solid gray;border-radius:6px;background-color:#F2F2F2;letter-spacing:1px;font-family:Arial;font-size:85%;text-overflow:ellipsis;overflow:hidden;white-space:nowrap'
         style['span.k'] = 'margin:0.3em 1em 0.2em 0;padding-left:0.3em;width:8.5em;color:gray;cursor:pointer'
-        style['span.q'] = 'margin:0.3em 0 0.2em 0;width:8.8em;text-align:center'
-        style['span.f'] = 'display:block;text-overflow:ellipsis;overflow:hidden'
+        style['span.q'] ='margin:0.3em 0 0.2em 0;width:8.8em;text-align:center'
+        style['span.f'] ='display:block;text-overflow:ellipsis;overflow:hidden'
         html = self.__fixanchor(cleansp(''.join(htmls)))
         return html.replace('#_anchor_', ''.join(['#', acr]))
 
@@ -738,7 +735,6 @@ def cleansp(html):
 
 
 def getpage(link, BASE_URL = 'http://www.vocabulary.com'):
-    http = PoolManager()
     r = http.request('GET', ''.join([BASE_URL, link]))
     if r.status == 200:
         return r.data
@@ -860,7 +856,6 @@ def downloadloop((mdict, failedlist, wordlist)):
         failed = makewords(wordlist, mdict)
         wordlist = failed
         lenr = len(failed)
-        time.sleep(5)
     failedlist.extend(failed)
 
 
@@ -909,6 +904,10 @@ def dumpstyle():
         dump(''.join(sty), 'v.css')
 
 
+def makeentry(key, content):
+    return '\n'.join([key, content, '</>\n'])
+
+
 def dumpwords(mdict, sfx='', finished=True):
     if mdict:
         dict.update(mdict)
@@ -921,10 +920,10 @@ def dumpwords(mdict, sfx='', finished=True):
             for word, entry in sorted(mdict.iteritems(), key=lambda d: d[0]):
                 if not entry.dumped:
                     if entry.hasblurb:
-                        fw[0].write('\n'.join([word, entry.htmlLearners, '</>\n']))
-                    fw[1].write('\n'.join([word, entry.htmlBasic, '</>\n']))
+                        fw[0].write(makeentry(word, entry.htmlLearners))
+                    fw[1].write(makeentry(word, entry.htmlBasic))
                     if entry.hasType:
-                        fw[2].write('\n'.join([word, entry.htmlLinguistics, '</>\n']))
+                        fw[2].write(makeentry(word, entry.htmlLinguistics))
             dumpstyle()
             digest = json.dumps(mdict, cls=DjEncoder, separators=(',', ':'))
             dump(digest, 'digest')
@@ -996,7 +995,6 @@ if __name__=="__main__":
     args = parser.parse_args()
     import socket
     socket.setdefaulttimeout(120)
-    time.sleep(0.1)
     if args.index:
         no = ' ' + args.index
     else:
