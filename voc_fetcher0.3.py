@@ -38,6 +38,7 @@ styled = {'v': '#539007', 'n': '#e3412f', 'j': '#f8b002', 'd': '#684b9d'}
 dictType = None
 cleanTag = None
 dict = {}
+style = {}
 base_dir = ''
 
 
@@ -155,7 +156,7 @@ class Definition:
                 if more:
                     showmore = self.__showmore(more[0].a, pos)
                     sddl.extend(showmore)
-                    showless = showmore[1].replace('s(', 'h(')
+                    showless = showmore[1].replace('m(', 'h(')
                     sddl.extend([showless.replace('more', 'less'), '<br>'])
                     sddl.extend(self.__transdd(dds))
                     sddl.append('</div>')
@@ -174,8 +175,8 @@ class Definition:
 
     def __showmore(self, a, pos):
         self.__judgeHascode(pos)
-        a = self.__addcode(a, 's')
-        return ['<div>', str(a), '</div><div style="display:none">']
+        a = self.__addcode(a, 'm')
+        return ['<div>', str(a), '</div><div class=v>']
 
     def __addcode(self, a, func):
         a['onclick'] = ''.join([func, '(this)'])
@@ -536,13 +537,14 @@ class WordData:
                 for prop, name in defidx:
                     htmls.append(LNK % (name[0], propstyle(prop), prop))
         if htmls:
-            htmls.insert(0, '<div style="font-family:Helvetica"><b>')
-            htmls.append('</b></div>')
+            style['div.h'] = 'font-family:Helvetica;font-weight:bold'
+            htmls.insert(0, '<div class=h>')
+            htmls.append('</div>')
         return htmls
 
     def __formatsidebar(self):
-        FIELD = '<fieldset style="font-family:Arial;font-size:90%%;border-radius:3px;border:1px dashed gray"><legend><span style="font-family:Helvetica"><b>CHOOSE YOUR WORDS</b></span></legend>%s</fieldset>'
-        html = '<div class="l t"><b>%s</b></div>%s'
+        FIELD = '<fieldset class=a><legend><span class=d>CHOOSE YOUR WORDS</span></legend>%s</fieldset>'
+        html = '<div class="l t">%s</div>%s'
         html %= (self.__chswdHd, self.__chswdBd)
         html = FIELD % html
         return html
@@ -593,16 +595,19 @@ class WordData:
         return html
 
     def __htmlstring(self, type):
-        style = {}
-        style['div.t'] = 'font-family:Tahoma'
-        style['div.b'] = 'color:blue;font-size:120%'
-        TITLE = '<div class="b t"id="v5A"><a id="%s"></a><b>%s</b>'
+        style['div.t'] = 'font-family:\'Lucida Grande\''
+        style['div.b'] = 'color:blue;font-weight:bold;font-size:120%'
+        TITLE = '<div class="b t"id="v5A"><a id="%s"></a>%s'
         style['div.m'] = 'margin-top:0.5em'
+        style['div.v'] = 'display:none'
         MARGIN = '<div class=m></div>'
         acr = self.__rdmstr()
-        htmls = [TITLE % (acr, self.__title)]
+        htmls = [] if type==1 else ['<script src="j.js"type="text/javascript"async></script>']
+        htmls.append('<link rel="stylesheet"href="v.css"type="text/css">')
+        htmls.append(TITLE % (acr, self.__title))
         if type != 1:
-            AUDIO = '<img src="p.png"style="margin-left:0.6em;width:16px;height:16px;cursor:pointer"onclick="l(this,\'%s\')"/>'
+            style['img.m'] = 'margin-left:0.6em;width:16px;height:16px;cursor:pointer'
+            AUDIO = '<img src="p.png"onclick="l(this,\'%s\')"class=m>'
             for prn in self.__prns:
                 htmls.append(AUDIO % prn)
         htmls.append('</div>')
@@ -615,7 +620,8 @@ class WordData:
         htmls.append('<br>')
         style['a.p'] = 'text-decoration:none;padding:0 5px 1px;font-size:70%;font-weight:bold;color:white'
         htmls.extend(self.__formatdefindex(style))
-        HR = '<hr style="height:1px;border:none;border-top:1px gray dashed">'
+        style['hr.s'] = 'height:1px;border:none;border-top:1px gray dashed'
+        HR = '<hr class=s>'
         htmls.append(HR)
         style['span.b'] = 'font-weight:bold;background-color:gray;color:white'
         if type != 1:
@@ -630,8 +636,10 @@ class WordData:
             style['span.c'] = 'font-family:\'Trebuchet MS\';font-size:80%;padding:0 3px 0 3px;letter-spacing:1px;border-radius:3px'
             SECHD = '<span class="b c">%s</span><br>'
             if self.__chswdHd:
-                style['div.l'] = 'color:green'
+                style['div.l'] = 'color:green;font-weight:bold'
                 style['div.q'] = 'text-indent:0;padding:0.3em 2em 0.3em'
+                style['fieldset.a'] = 'font-family:Arial;font-size:90%;border-radius:3px;border:1px dashed gray'
+                style['span.d'] = 'font-family:Helvetica;font-weight:bold'
                 htmls.append(MARGIN)
                 htmls.append(self.__formatsidebar())
             if self.__wdfmls:
@@ -651,7 +659,7 @@ class WordData:
                     htmls.append(usage.htmlstring)
                 htmls.append('</div></div>')
         htmls.append('<div class="a m">')
-        style['span.t'] = 'font-family:Tahoma'
+        style['span.t'] = 'font-family:\'Lucida Grande\''
         style['div.y'] = 'font-family:Helvetica;color:#2F6771;font-weight:bold'
         style['div.p'] = 'padding-left:1em'
         if len(self.__fuldefs) == 1:
@@ -666,18 +674,22 @@ class WordData:
                 index += 1
                 htmls.extend(self.__formatfulldef(fuldef, type, style))
         htmls.append('</div>')
-        sty = ['<style>']
-        for k, v in sorted(style.items(), key=lambda d: d[0]):
-            sty.extend([k, '{', v, '}'])
-        sty.append('</style>')
-        code = '<script>function s(c){with(c.parentNode){style.display="none";nextSibling.style.display="block";}}function h(c){with(c.parentNode){previousSibling.style.display="block";style.display="none";}}</script>'
-        if (type==1 and self.__hascode[1]) or (type!=1 and self.__hascode[0]):
-            sty.append(code)
-        if type!=1:
-            sty.append('<script src="j.js"type="text/javascript"async></script><script src="http://rawgithub.com/OZv/E/G/j.js"type="text/javascript"async></script>')
-        sty.extend(htmls)
+        if type == 1:
+            if self.__hascode[1]:
+                htmls.append('<script>document.write(\'<script>function m(c){with(c.parentNode){style.display="none";nextSibling.style.display="block";}}function h(c){with(c.parentNode){previousSibling.style.display="block";style.display="none";}}<\/script>\');</script>')
+        else:
+            htmls.extend(['<script>if(typeof(Z)=="undefined"){var l=document.getElementsByTagName("link");var r=/v.css$/;for(var i=l.length-1;i>=0;i--)with(l[i].href){var m=match(r);if(m&&l[i].nextSibling.id=="v5A")',
+                '{document.write(\'<script src="\'+replace(r,"j.js")+\'"type="text/javascript"async><\/script>\');break;}}}</script>'])
         self.__dumped = True
-        html = self.__fixanchor(cleansp(''.join(sty)))
+        style['a.q'] = 'text-decoration:none;cursor:default'
+        style['a.t'] = 'text-decoration:none'
+        style['div.f'] = 'display:none;float:left;position:absolute;margin:-1.5em 0 0 -0.05em;padding-left:0.3em;border:1px solid gray;border-radius:6px;box-shadow:1.5px 1.5px 0 #D9D9D9;background-color:#F2F2F2;color:gray;letter-spacing:1px;line-height:140%;font-family:Arial;font-size:85%;white-space:nowrap;cursor:pointer'
+        style['span.j'] = 'padding:0.8em;color:gray'
+        style['span.p'] = 'display:inline-block;line-height:110%;border:1px solid gray;border-radius:6px;background-color:#F2F2F2;letter-spacing:1px;font-family:Arial;font-size:85%;text-overflow:ellipsis;overflow:hidden;white-space:nowrap'
+        style['span.k'] = 'margin:0.3em 1em 0.2em 0;padding-left:0.3em;width:8.5em;color:gray;cursor:pointer'
+        style['span.q'] = 'margin:0.3em 0 0.2em 0;width:8.8em;text-align:center'
+        style['span.f'] = 'display:block;text-overflow:ellipsis;overflow:hidden'
+        html = self.__fixanchor(cleansp(''.join(htmls)))
         return html.replace('#_anchor_', ''.join(['#', acr]))
 
 
@@ -887,6 +899,16 @@ def fixrefs(files):
             os.rename(''.join([file, '.tmp']), file)
 
 
+def dumpstyle():
+    if base_dir:
+        dump(json.dumps(style, separators=(',', ':')), 'style')
+    else:
+        sty = []
+        for k, v in sorted(style.iteritems(), key=lambda d: d[0]):
+            sty.extend([k, '{', v, '}'])
+        dump(''.join(sty), 'v.css')
+
+
 def dumpwords(mdict, sfx='', finished=True):
     if mdict:
         dict.update(mdict)
@@ -903,6 +925,7 @@ def dumpwords(mdict, sfx='', finished=True):
                     fw[1].write('\n'.join([word, entry.htmlBasic, '</>\n']))
                     if entry.hasType:
                         fw[2].write('\n'.join([word, entry.htmlLinguistics, '</>\n']))
+            dumpstyle()
             digest = json.dumps(mdict, cls=DjEncoder, separators=(',', ':'))
             dump(digest, 'digest')
         finally:
