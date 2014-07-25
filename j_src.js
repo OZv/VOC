@@ -16,6 +16,18 @@ x=null;
 Z=null;
 M=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 D=[null,"F","A","N","B","S","M","T"];
+function m(c){
+with(c.parentNode){
+style.display="none";
+nextSibling.style.display="block";
+}
+}
+function h(c){
+with(c.parentNode){
+previousSibling.style.display="block";
+style.display="none";
+}
+}
 function g(c,w){
 R(c);
 x.onload=function(){
@@ -177,7 +189,11 @@ if(x){
 if(window.addEventListener)
 document.addEventListener('click',k,false);
 else document.attachEvent('onclick',k);
-var s='<span id="I9l"style="display:inline-block;margin:0.3em 1em 0.2em 0;padding-left:0.3em;line-height:110%;border:1px solid gray;border-radius:6px;width:8.5em;background-color:#F2F2F2;letter-spacing:1px;font-family:Arial;font-size:85%;color:gray;text-overflow:ellipsis;overflow:hidden;white-space:nowrap;cursor:pointer"onclick="e(this,event)">All Sources</span><div id="mIq"style="display:none;float:left;position:absolute;margin:-1.5em 0 0 -0.05em;padding-left:0.3em;border:1px solid gray;border-radius:6px;box-shadow:1.5px 1.5px 0 #D9D9D9;background-color:#F2F2F2;color:gray;letter-spacing:1px;line-height:140%;font-family:Arial;font-size:85%;text-overflow:ellipsis;overflow:hidden;white-space:nowrap;cursor:pointer"><span onclick="c(this,event,0,Z#)"style="display:block">All Sources</span><span onclick="c(this,event,1,Z#)"style="display:block">Fiction</span><span onclick="c(this,event,2,Z#)"style="display:block">Arts/Culture</span><span onclick="c(this,event,3,Z#)"style="display:block">News</span><span onclick="c(this,event,4,Z#)"style="display:block">Business</span><span onclick="c(this,event,5,Z#)"style="display:block">Sports</span><span onclick="c(this,event,6,Z#)"style="display:block">Science/Medicine</span><span onclick="c(this,event,7,Z#)"style="display:block">Technology</span></div><span style="display:inline-block;margin:0.3em 0 0.2em 0;line-height:110%;border:1px solid gray;border-radius:6px;width:8.8em;text-align:center;background-color:#F2F2F2;letter-spacing:1px;font-family:Arial;font-size:85%;text-overflow:ellipsis;overflow:hidden;white-space:nowrap"><a href="javascript:void(0);"style="text-decoration:none;color:gray;cursor:default">&lt;Prev</a><span style="padding:0.8em;color:gray">|</span><a href="javascript:void(0);"onclick="n(this,Z#)"style="text-decoration:none">Next&gt;</a></span>';
+var s='';
+var a=["All Sources","Fiction","Arts/Culture","News","Business","Sports","Science/Medicine","Technology"];
+for(var i=0;i<a.length;i++)
+	s+='<span onclick="c(this,event,'+i+',Z#)"class=f>'+a[i]+'</span>';
+s='<span id="I9l"onclick="e(this,event)"class="p k">All Sources</span><div id="mIq"class=f>'+s+'</div><span class="p q"><a href="javascript:void(0);"style="color:gray"class=q>&lt;Prev</a><span class=j>|</span><a href="javascript:void(0);"onclick="n(this,Z#)"class=t>Next&gt;</a></span>';
 var u=document.getElementsByTagName('div');
 var c=0;
 var t=[];
@@ -194,7 +210,7 @@ w.push([u[i].innerHTML]);
 Z.push(w);
 u[i].innerHTML=s.replace(/Z#/g,"Z"+w[0])+u[i].innerHTML;
 }else if(d=='v5A')
-t.push(encodeURI(u[i].childNodes[1].innerText));
+t.push(encodeURI(u[i].innerText));
 }
 for(var i=0;i<Z.length;i++)
 Z[i].push(t[i]);
