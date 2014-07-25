@@ -1,3 +1,5 @@
+Copyright (C) bt4baidu
+http://www.pdawiki.com/forum/thread-12743-1-1.html
 
 j.js
 
