@@ -29,7 +29,6 @@ https://bitbucket.org/vinay.sajip/pylauncher/downloads/launcher.msi
 6. 将wordlist.txt和以上两脚本文件放在同一目录下
 7. 配置下载进程数及每块的单词数，目前默认设为20个进程，每块1000个单词  
       如果要修改，找到wrapper.py的如下两行：  
-      
             if __name__ == '__main__':
                   STEP = 1000        # 每块1000个单词
                   MAX_PROCESS = 20   # 开20个进程
@@ -37,7 +36,7 @@ https://bitbucket.org/vinay.sajip/pylauncher/downloads/launcher.msi
       不需要用代理，该网站不封IP（如果开几百个进程有可能会被服务器拒绝访问，未实测）  
       单进程的情况下实测平均下载速度为50个单词左右/1分钟  
       如果下载单词量大建议多开进程，按目前默认15个的设置，148730个单词需要大概3~4小时下完  
-8. 双击wrapper.py，会自动生成mdict目录，并将单词分块开始下载。下载完后自动合并  
+8. 双击wrapper.py，会自动生成mdict目录，并将单词分块开始下载。下载完后自动合并
 如果双击voc_fetcher0.3.py，也会开始下载，但只支持一个进程  
 有一些错误检测和后期格式处理只在wrapper.py写了，本人懒得再往voc_fetcher0.3.py里加  
 因此为了确保最后生成的文件正确，即使只打算开一个进程也推荐双击wrapper.py执行  
