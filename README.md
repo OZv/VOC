@@ -1,4 +1,4 @@
-Copyright (C) 2014 bt4baidu  
+Copyright &copy; 2014 bt4baidu  
 http://www.pdawiki.com/forum/thread-12743-1-1.html  
 **敬告：本程序及其所产生的数据仅供学习交流，请勿商用牟利**
 ***  
@@ -29,9 +29,9 @@ https://bitbucket.org/vinay.sajip/pylauncher/downloads/launcher.msi
 6. 将wordlist.txt和以上两脚本文件放在同一目录下
 7. 配置下载进程数及每块的单词数，目前默认设为20个进程，每块1000个单词  
 如果要修改，找到wrapper.py的如下两行：  
-<code>    if __name__ == '__main__':
-      STEP = 1000        <- 每块1000个单词
-      MAX_PROCESS = 20   <- 开20个进程
+<code>    if __name__ == '__main__':  
+      STEP = 1000        # 每块1000个单词  
+      MAX_PROCESS = 20   # 开20个进程  
 </code>
 进程个数的上限视个人PC的配置和网速而定，PC性能好可以开二三十个甚至更多  
 不需要用代理，该网站不封IP（如果开几百个进程有可能会被服务器拒绝访问，未实测）  
