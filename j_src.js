@@ -148,15 +148,15 @@ with(c.style){
 }
 }
 function l(c,f){
+R(c);
 c.style.border="1px dotted gray";
 var u="http://s3.amazonaws.com/audio.vocabulary.com/1.0/us/"+f+".mp3";
 try{
 var a=document.createElement("audio");
 a.setAttribute("src",u);
+a.onended=function(){c.style.border="";A(c,"l(this,'"+f+"')");};
 a.play();
 }catch(e){
-R(c);
-}finally{
 c.style.border="";
 }
 }
