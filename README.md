@@ -30,9 +30,9 @@ https://bitbucket.org/vinay.sajip/pylauncher/downloads/launcher.msi
 7. 配置下载进程数及每块的单词数，目前默认设为20个进程，每块1000个单词  
       如果要修改，找到wrapper.py的如下两行：  
       
-            if __name__ == '__main__':
-                  STEP = 1000        # 每块1000个单词
-                  MAX_PROCESS = 20   # 开20个进程
+      if __name__ == '__main__':
+            STEP = 1000        # 每块1000个单词
+            MAX_PROCESS = 20   # 开20个进程
       进程个数的上限视个人PC的配置和网速而定，PC性能好可以开二三十个甚至更多  
       不需要用代理，该网站不封IP（如果开几百个进程有可能会被服务器拒绝访问，未实测）  
       单进程的情况下实测平均下载速度为50个单词左右/1分钟  
@@ -43,4 +43,4 @@ https://bitbucket.org/vinay.sajip/pylauncher/downloads/launcher.msi
 因此为了确保最后生成的文件正确，即使只打算开一个进程也推荐双击wrapper.py执行  
 9. voc_fetcher0.3.py文件名不可修改，如果要改，要同时在wrapper.py里改下面一行：  
       
-            arg.append('python -u voc_fetcher0.3.py %s %d' % (sdir, i))
+      arg.append('python -u voc_fetcher0.3.py %s %d' % (sdir, i))
