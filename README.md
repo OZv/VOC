@@ -29,6 +29,7 @@ https://bitbucket.org/vinay.sajip/pylauncher/downloads/launcher.msi
 6. 将wordlist.txt和以上两脚本文件放在同一目录下
 7. 配置下载进程数及每块的单词数，目前默认设为20个进程，每块1000个单词  
       如果要修改，找到wrapper.py的如下两行：  
+      
             if __name__ == '__main__':
                   STEP = 1000        # 每块1000个单词
                   MAX_PROCESS = 20   # 开20个进程
