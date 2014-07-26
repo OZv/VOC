@@ -523,7 +523,7 @@ class WordData:
 # start formatting from here
     def __formatdefindex(self, style):
         htmls = []
-        LNK = '<a href="entry://#%s"class="p %s">%s</a> '
+        LNK = '<a href="entry://#%s"class="o %s">%s</a>'
         if len(self.__fuldefindex) == 1:
             for prop, name in self.__fuldefindex[0]:
                 htmls.append(LNK % (name[0], propstyle(prop), prop))
@@ -536,6 +536,8 @@ class WordData:
                 index += 1
                 for prop, name in defidx:
                     htmls.append(LNK % (name[0], propstyle(prop), prop))
+                htmls.append(' ')
+            htmls[-1] = htmls[-1].rstrip()
         if htmls:
             style['div.h'] = 'font-family:Helvetica;font-weight:bold'
             htmls.insert(0, '<div class=h>')
@@ -617,6 +619,7 @@ class WordData:
         htmls.append(FREQ % self.__wdfrq)
         htmls.append('<br>')
         style['a.p'] = 'text-decoration:none;padding:0 5px 1px;font-size:70%;font-weight:bold;color:white'
+        style['a.o'] = 'text-decoration:none;padding:0 5px 1px;margin-right:3px;font-size:70%;font-weight:bold;color:white'
         htmls.extend(self.__formatdefindex(style))
         style['hr.s'] = 'height:1px;border:none;border-top:1px gray dashed'
         htmls.append('<hr class=s>')
