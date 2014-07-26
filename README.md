@@ -33,7 +33,6 @@ https://bitbucket.org/vinay.sajip/pylauncher/downloads/launcher.msi
             if __name__ == '__main__':
                   STEP = 1000        # 每块1000个单词
                   MAX_PROCESS = 20   # 开20个进程
-      
       进程个数的上限视个人PC的配置和网速而定，PC性能好可以开二三十个甚至更多  
       不需要用代理，该网站不封IP（如果开几百个进程有可能会被服务器拒绝访问，未实测）  
       单进程的情况下实测平均下载速度为50个单词左右/1分钟  
