@@ -96,6 +96,11 @@ def find_fulldefine(tags, p):
     return None
 
 
+def randomstr(digit):
+    return ''.join(random.sample(string.ascii_letters, 1)+
+        random.sample(string.ascii_letters+string.digits, digit-1))
+
+
 class Definition:
 # full definition data structure
     def __init__(self, define, dd_ext):
@@ -288,6 +293,7 @@ class WordData:
             self.__sblurb = None
             self.__lblurb = None
             self.__hasblurb = False
+            self.__chswdTt = None
             self.__chswdHd = None
             self.__chswdBd = None
             self.__fuldefs = [] # [[]]
@@ -372,35 +378,61 @@ class WordData:
             for a in al:
                 self.__prns.append(str(a['name']))
 
-    def __transfchswdBd(self, div):
-        div['class'] = 'i'
+    def __transfchswdBd(self, div, link):
+        sml = div.find_all('small')
+        for sm in sml:
+            sm.name = 'span'
+            sm['class'] = 'r'
+            if sm.parent.name=='em':
+                sm.parent.replace_with(sm)
         eml = div.find_all('em')
         for em in eml:
-            em.name = 'span'
-            em['class'] = 's'
+            if em.parent.name=='a':
+                em.name = 'i'
+            else:
+                em.name = 'span'
+                em['class'] = 's'
+        pl = div.find_all('p', align='center')
+        for p in pl:
+            del p['align']
+            del p['target']
+            p.name = 'div'
+            p['class'] = 'e'
+        pl = div.find_all('p')
+        for p in pl:
+            if p.parent.name=='blockquote':
+                p.name = 'div'
+                p['class'] = 'g q'
+                p.parent.replace_with(p)
+            else:
+                p['class'] = 'i'
         bl = div.find_all('blockquote')
         for blk in bl:
             blk.name = 'div'
             blk['class'] = 'g q'
-        self.__chswdBd = str(div).strip()
+        il = div.find_all('img')
+        for img in il:
+            del img['alt']
+            del img['class']
+            file, ext = path.splitext(img['src'])
+            file = path.sep.join(['p', ''.join([randomstr(3), ext])])
+            dump(getpage(''.join([link, img['src']])), file, 'wb')
+            img['src'] = file.replace(path.sep, '/')
+        self.__chswdBd = unwraptag(div).strip()
         p = re.compile(r'(</?)\s*strong\s*(?=>)', re.I)
         self.__chswdBd = p.sub(r'\1b', self.__chswdBd)
-        p = re.compile(r'<\s*p\s*>', re.I)
-        self.__chswdBd = p.sub(r'', self.__chswdBd)
-        p = re.compile(r'</\s*p\s*>\s*', re.I)
-        self.__chswdBd = p.sub(r'<br>', self.__chswdBd)
         p = re.compile(r'\s+')
         self.__chswdBd = p.sub(r' ', self.__chswdBd)
-        p = re.compile(r'\s*<br>\s*(</?div)')
+        p = re.compile(r'\s*<br/?>\s*(</?div)')
         self.__chswdBd = p.sub(r'\1', self.__chswdBd)
 
     def __getmore(self, link):
-        page = getpage(urllib.quote(link))
+        page = getpage(link)
         article = SoupStrainer('div', class_='articlebody')
         soup = BeautifulSoup(page, parse_only=article)
         div = soup.find('div', {'class': 'articlebody'})
         assert div
-        self.__transfchswdBd(div)
+        self.__transfchswdBd(div, link)
 
     def __getblurb(self, div):
         ps = div.find('p', {'class': 'short'})
@@ -419,10 +451,12 @@ class WordData:
             self.__lblurb = str(pl).strip()
         divbar = div.find('div', {'class': 'sidebar'})
         if divbar:
+            self.__chswdTt = divbar.h3.string.rstrip(': ').upper()
             self.__chswdHd = divbar.h4.string
             a = divbar.find('a', {'class': 'readMore'})
             if a and a['href']:
-                self.__getmore(a['href'])
+                link = ''.join(['/', a['href'].strip('/ '), '/'])
+                self.__getmore(link)
             else:
                 div = divbar.find('div', {'class': 'body'})
                 if div.a:
@@ -546,7 +580,7 @@ class WordData:
 
     def __formatsidebar(self):
         return ['<fieldset class=a>',
-                '<legend><span class=d>CHOOSE YOUR WORDS</span></legend>',
+                '<legend><span class=d>', self.__chswdTt, '</span></legend>',
                 '<div class="l t">', self.__chswdHd, '</div>',
                 self.__chswdBd, '</fieldset>']
 
@@ -585,28 +619,24 @@ class WordData:
                 htmls.append('</div>')
         return htmls
 
-    def __rdmstr(self):
-        return ''.join(random.sample(string.ascii_letters, 1)+
-                    random.sample(string.ascii_letters+string.digits, 3))
-
     def __fixanchor(self, html):
         for item in self.__fuldefindex:
             for k, v in item:
-                html = html.replace(v[0], self.__rdmstr())
+                html = html.replace(v[0], randomstr(4))
         return html
 
     def __htmlstring(self, type):
-        style['div.t'] = 'font-family:\'Lucida Grande\''
+        style['div.t'] = 'font-family:\'Lucida Grande\',\'Lucida Sans Unicode\''
         style['div.b'] = 'color:blue;font-weight:bold;font-size:120%'
         style['div.m'] = 'margin-top:0.5em'
         style['div.v'] = 'display:none'
         MARGIN = '<div class=m></div>'
-        acr = self.__rdmstr()
+        acr = randomstr(4)
         htmls = [] if type==1 else ['<script src="j.js"type="text/javascript"async></script>']
         htmls.extend(['<link rel="stylesheet"href="v.css"type="text/css">',
             '<div class="b t"id="v5A"><a id="%s"></a>'%acr, self.__title])
         if type != 1:
-            style['img.m'] = 'margin-left:0.6em;width:16px;height:16px;cursor:pointer'
+            style['img.m'] = 'margin-left:0.6em;margin-right:2px;width:16px;height:16px;cursor:pointer'
             AUDIO = '<img src="p.png"onclick="l(this,\'%s\')"class=m>'
             for prn in self.__prns:
                 htmls.append(AUDIO % prn)
@@ -637,9 +667,12 @@ class WordData:
             SECHD = '<span class="b c">%s</span><br>'
             if self.__chswdHd:
                 style['div.l'] = 'color:green;font-weight:bold'
-                style['div.q'] = 'text-indent:0;padding:0.3em 2em 0.3em'
+                style['div.q'] = 'padding:0.3em 2.4em 0.3em'
+                style['div.e'] = 'text-align:center'
                 style['fieldset.a'] = 'font-family:Arial;font-size:90%;border-radius:3px;border:1px dashed gray'
                 style['span.d'] = 'font-family:Helvetica;font-weight:bold'
+                style['span.r'] = 'color:gray;font-size:80%'
+                style['p.i'] = 'text-indent:1.2em;margin:0.3em 0'
                 htmls.append(MARGIN)
                 htmls.extend(self.__formatsidebar())
             if self.__wdfmls:
@@ -659,7 +692,7 @@ class WordData:
                     htmls.append(usage.htmlstring)
                 htmls.append('</div></div>')
         htmls.append('<div class="a m">')
-        style['span.t'] = 'font-family:\'Lucida Grande\''
+        style['span.t'] = 'font-family:\'Lucida Grande\',\'Lucida Sans Unicode\''
         style['div.y'] = 'font-family:Helvetica;color:#2F6771;font-weight:bold'
         style['div.p'] = 'padding-left:1em'
         if len(self.__fuldefs) == 1:
@@ -713,11 +746,11 @@ def readdata(file):
     return None
 
 
-def dump(data, file):
+def dump(data, file, mod='w'):
     fname = fullpath(file)
-    fw = open(fname, 'w')
+    fw = open(fname, mod)
     try:
-        fw.write(str(data))
+        fw.write(data)
     finally:
         fw.close()
 
@@ -730,9 +763,9 @@ def removefile(file):
 def cleansp(html):
     p = re.compile(r'\s+')
     html = p.sub(' ', html)
-    p = re.compile(r'\s*(<(?:/div|br)>)\s*')
+    p = re.compile(r'\s*(<(?:/div|br/?|/p)>)\s*')
     html = p.sub(r'\1', html)
-    p = re.compile(r'\s+(<div>)')
+    p = re.compile(r'\s*(<(?:div|p)[^>]*>)\s*')
     html = p.sub(r'\1', html)
     return html
 
@@ -974,6 +1007,11 @@ def start(dir):
     if base_dir:
         base_dir = base_dir.strip('/\\ ').replace('/', '\\')
         base_dir = ''.join([path.sep.join(base_dir.split('\\')), path.sep])
+    picdir = fullpath('p')
+    if not path.exists(picdir):
+        os.mkdir(picdir)
+    else:
+        [os.remove(path.sep.join([picdir, f])) for f in os.listdir(picdir)]
     fp1 = fullpath('digest')
     fp2 = fullpath('vocabulary.txt.part')
     fp3 = fullpath('failed.txt')
