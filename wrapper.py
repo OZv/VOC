@@ -21,6 +21,7 @@ import os
 import re
 import time
 import json
+import shutil
 import urllib2
 from os import path
 from multiprocessing import Pool
@@ -298,7 +299,7 @@ def gen_wordlist(ordered):
     style = {}
     style['a'] = 'text-decoration:none'
     style['div.b'] = 'color:blue;font-weight:bold;font-size:120%'
-    style['div.t'] = 'font-family:\'Lucida Grande\''
+    style['div.t'] = 'font-family:\'Lucida Grande\',\'Lucida Sans Unicode\''
     style['div.a'] = 'font-family:Arial'
     style['div.g'] = 'color:gray'
     style['div.d'] = 'font-size:90%'
@@ -333,6 +334,11 @@ def combinefiles(times):
         'vocabulary_Learners.txt']
     mfile = [fullpath(dir, f) for f in filelist]
     fw = [open(f, 'w') for f in mfile]
+    picdir = fullpath(dir, 'p')
+    if not path.exists(picdir):
+        os.mkdir(picdir)
+    else:
+        [os.remove(path.sep.join([picdir, f])) for f in os.listdir(picdir)]
     global ddg
     style = {}
     for i in xrange(1, times+2):
@@ -341,6 +347,9 @@ def combinefiles(times):
         ddg.update(json.loads(data, object_hook=to_worddata))
         data = readdata(''.join([subdir, 'style']))
         style.update(json.loads(data))
+        sbpdir = fullpath(subdir, 'p')
+        if path.exists(sbpdir):
+            [shutil.move(path.sep.join([sbpdir, f]), picdir) for f in os.listdir(sbpdir)]
     sty = []
     for k, v in sorted(style.iteritems(), key=lambda d: d[0]):
         sty.extend([k, '{', v, '}'])
@@ -353,8 +362,7 @@ def combinefiles(times):
         ''.join([dir, 'wordfreq.txt']))
     digest = json.dumps(ddg, cls=DjEncoder, separators=(',', ':'))
     dump(digest, ''.join([dir, 'digest']))
-    pImg = re.compile(r'(?<=<)(img +(?!src\="p.png")[^>]+)(?=>)', re.I)
-    pHref = re.compile(r'href=(?!["\'](?:entry|http|www.|javascript|\w+.css))[^>]+>', re.I)
+    href = re.compile(r'href=(?!["\'](?:entry|http|www.|javascript|\w+.css))[^>]+>', re.I)
     logs = []
     try:
         for idx in xrange(1, times+2):
@@ -367,13 +375,10 @@ def combinefiles(times):
                 warning.append('WARNING: Entries of file %s is not equal to its wordlist\'s' % fn[0])
             if mdata[0].count('<span class="b c">WORD FAMILY</span>') != cnt:
                 warning.append('WARNING: Some entries of file %s is not completed' % fn[0])
-            mdata = [pImg.sub(r'!--\1--', mdata[i]) for i in xrange(0, 3)]
-            img = pImg.findall(mdata[0])
-            link = pHref.findall(mdata[0])
-            if warning or img or link:
+            link = href.findall(mdata[0])
+            if warning or link:
                 logs.append(fn[0])
                 logs.extend(warning)
-                logs.extend(img)
                 logs.extend(link)
             [fw[i].write(''.join([mdata[i], '\n']) if mdata[i] else '') for i in xrange(0, 3)]
         for k, v in sorted(ldict.iteritems(), key=lambda d: d[0]):
