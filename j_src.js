@@ -147,17 +147,11 @@ with(c.style){
 	cursor="pointer";
 }
 }
-function T(c){
-with(c.style){
-border="";
-marginRight="2px";
-}
-}
 function l(c,f){
 R(c);
-with(c.style){border="1px dotted gray";marginRight="1px";}
+c.style.outline="1px dotted gray";
 var u="http://s3.amazonaws.com/audio.vocabulary.com/1.0/us/"+f+".mp3";
-var b=function(){T(c);A(c,"l(this,'"+f+"')");};
+var b=function(){c.style.outline="";A(c,"l(this,'"+f+"')");};
 var t=setTimeout(b,2000);
 try{
 with(document.createElement("audio")){
@@ -167,7 +161,7 @@ onended=b;
 play();
 }
 }catch(e){
-T(c);
+c.style.outline="";
 }
 }
 function z(){
