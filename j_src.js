@@ -147,17 +147,39 @@ with(c.style){
 	cursor="pointer";
 }
 }
+function T(c){
+with(c.style){
+border="";
+marginRight="2px";
+}
+}
 function l(c,f){
 R(c);
-c.style.border="1px dotted gray";
+with(c.style){border="1px dotted gray";marginRight="1px";}
 var u="http://s3.amazonaws.com/audio.vocabulary.com/1.0/us/"+f+".mp3";
+var b=function(){T(c);A(c,"l(this,'"+f+"')");};
+var t=setTimeout(b,2000);
 try{
-var a=document.createElement("audio");
-a.setAttribute("src",u);
-a.onended=function(){c.style.border="";A(c,"l(this,'"+f+"')");};
-a.play();
+with(document.createElement("audio")){
+setAttribute("src",u);
+onloadstart=function(){clearTimeout(t);};
+onended=b;
+play();
+}
 }catch(e){
-c.style.border="";
+T(c);
+}
+}
+function z(){
+var g=document.getElementsByTagName('img');
+var w=window.innerWidth||document.documentElement.clientWidth||document.body.clientWidth;
+w*=0.8;
+for(var i=0;i<g.length;i++)
+with(g[i])
+if(width>=w){
+var r=w/width;
+width=parseInt(w);
+height=parseInt(height*r);
 }
 }
 function k(){
@@ -178,6 +200,9 @@ function d(){
 if(Z)
 return;
 Z=new Array();
+z();
+if(!window.ActiveXObject&&window.addEventListener)
+window.addEventListener("resize",z,false);
 if(window.XMLHttpRequest)
 x=new XMLHttpRequest();
 if(!x||!("withCredentials"in x)){
