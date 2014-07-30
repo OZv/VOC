@@ -35,8 +35,6 @@ from bs4 import BeautifulSoup
 ENTLINK = '<a href="entry://%s">%s</a>'
 styled = {'v': '#539007', 'n': '#e3412f', 'j': '#f8b002', 'd': '#684b9d'}
 http = PoolManager()
-dictType = None
-cleanTag = None
 dict = {}
 style = {}
 base_dir = ''
@@ -67,16 +65,9 @@ def addref(word, type, clean=False):
     return html
 
 
-def subref(m):
-    return addref(m.group(1), dictType, cleanTag)
-
-
 def addrefs(html, type, clean=False):
-    global dictType, cleanTag
-    dictType = type
-    cleanTag = clean
     p = re.compile(r'<a>([^</>]+)</a>')
-    html = p.sub(subref, html)
+    html = p.sub(lambda m: addref(m.group(1), type, clean), html)
     return html
 
 
@@ -193,9 +184,7 @@ class Definition:
         sddl = []
         for dd in dds:
             al = dd.find_all('a')
-            for a in al:
-                del a['class']
-                del a['href']
+            [a.attrs.clear() for a in al]
             divs = dd.find_all('div', {'class': 'definition'})
             for div in divs:
                 div['class'] = 'g'
@@ -379,48 +368,59 @@ class WordData:
                 self.__prns.append(str(a['name']))
 
     def __transfchswdBd(self, div, link):
+        tl = div.find_all(lambda tag: tag.name!='img')
+        for tag in tl:
+            del tag['class']
+            del tag['id']
         sml = div.find_all('small')
         for sm in sml:
             sm.name = 'span'
             sm['class'] = 'r'
             if sm.parent.name=='em':
                 sm.parent.replace_with(sm)
-        eml = div.find_all('em')
-        for em in eml:
-            if em.parent.name=='a':
-                em.name = 'i'
-            else:
-                em.name = 'span'
-                em['class'] = 's'
         pl = div.find_all('p', align='center')
         for p in pl:
-            del p['align']
-            del p['target']
+            p.attrs.clear()
             p.name = 'div'
             p['class'] = 'e'
         pl = div.find_all('p')
         for p in pl:
-            if p.parent.name=='blockquote':
-                p.name = 'div'
-                p['class'] = 'g q'
-                p.parent.replace_with(p)
-            else:
-                p['class'] = 'i'
+            p['class'] = 'i'
         bl = div.find_all('blockquote')
         for blk in bl:
-            blk.name = 'div'
-            blk['class'] = 'g q'
+            pl = blk.find_all('p')
+            if len(pl) == 1:
+                pl[0].name = 'div'
+                pl[0]['class'] = 'g q'
+                blk.replace_with(pl[0])
+            else:
+                for p in pl:
+                    p['class'] = 'q'
+                blk.name = 'div'
+                blk['class'] = 'g q'
         il = div.find_all('img')
         for img in il:
+            if 'class' in img.attrs and img['class'][0]=='main':
+                img.extract()
+                continue
             del img['alt']
             del img['class']
             file, ext = path.splitext(img['src'])
             file = path.sep.join(['p', ''.join([randomstr(3), ext])])
-            dump(getpage(''.join([link, img['src']])), file, 'wb')
+            url = img['src']
+            if url[0] != '/':
+                url = ''.join([link, url])
+            dump(getpage(url), file, 'wb')
             img['src'] = file.replace(path.sep, '/')
+        sl = div.find_all('source')
+        for source in sl:
+            if source.parent.name == 'div':
+                source.extract()
         self.__chswdBd = unwraptag(div).strip()
         p = re.compile(r'(</?)\s*strong\s*(?=>)', re.I)
         self.__chswdBd = p.sub(r'\1b', self.__chswdBd)
+        p = re.compile(r'(</?)\s*em\s*(?=>)', re.I)
+        self.__chswdBd = p.sub(r'\1i', self.__chswdBd)
         p = re.compile(r'\s+')
         self.__chswdBd = p.sub(r' ', self.__chswdBd)
         p = re.compile(r'\s*<br/?>\s*(</?div)')
@@ -672,6 +672,7 @@ class WordData:
                 style['fieldset.a'] = 'font-family:Arial;font-size:90%;border-radius:3px;border:1px dashed gray'
                 style['span.d'] = 'font-family:Helvetica;font-weight:bold'
                 style['span.r'] = 'color:gray;font-size:80%'
+                style['p.q'] = 'margin:0.3em 0'
                 style['p.i'] = 'text-indent:1.2em;margin:0.3em 0'
                 htmls.append(MARGIN)
                 htmls.extend(self.__formatsidebar())
