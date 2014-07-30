@@ -267,7 +267,7 @@ def makeentry(title, cnt, ordered):
     for k, vl in cata:
         idx.append('<span onclick="v(this,%d)"' % i)
         if i==0:
-            idx.append('style="color:#369;border:1px solid #369;background-color:#CEE3F6"')
+            idx.append('style="color:#369;border:1px solid #369;box-shadow:-1px -1px 3px #A9BCF5 inset;background-color:#CEE3F6"')
         idx.extend(['class=x>', k, '</span>'])
         vl.sort()
         txt.append('<div class=v>')
@@ -307,7 +307,7 @@ def gen_wordlist(ordered):
     style['div.z'] = 'width:30%;height:30%;position:absolute;z-index:-999;visibility:hidden'
     style['hr.s'] = 'height:1px;border:none;border-top:1px gray dashed'
     style['span.w'] = 'display:inline-block;white-space:nowrap'
-    style['span.x'] = 'display:inline-block;margin:0.2em;width:1em;text-align:center;padding:0.1em 0.2em 0 0.2em;border:1px solid gray;border-radius:5px;background-color:#F2F2F2;font-family:Helvetica;font-weight:bold;color:gray;cursor:pointer'
+    style['span.x'] = 'display:inline-block;margin:0.2em;width:1em;text-align:center;padding:0.1em 0.2em 0 0.2em;border:1px solid gray;border-radius:5px;box-shadow:-1px -1px 3px #D9D9D9 inset;background-color:#F2F2F2;font-family:Helvetica;font-weight:bold;color:gray;cursor:pointer'
     sty = []
     for k, v in sorted(style.iteritems(), key=lambda d: d[0]):
         sty.extend([k, '{', v, '}'])
@@ -337,8 +337,6 @@ def combinefiles(times):
     picdir = fullpath(dir, 'p')
     if not path.exists(picdir):
         os.mkdir(picdir)
-    else:
-        [os.remove(path.sep.join([picdir, f])) for f in os.listdir(picdir)]
     global ddg
     style = {}
     for i in xrange(1, times+2):
