@@ -90,12 +90,10 @@ def getwordlist(file):
     return []
 
 
-ddg = {}
-dictType = None
 ENTLINK = '<a href="entry://%s">%s</a>'
 
 
-def addref(word, type, clean=True):
+def addref(ddg, word, type, clean=True):
     if word in ddg:
         if type == 1:
             if ddg[word].hasType:
@@ -120,28 +118,26 @@ def addref(word, type, clean=True):
     return html
 
 
-def addrefs(html, type):
+def addrefs(ddg, html, type):
     p = re.compile(r'<a>([^</>]+)</a>')
-    html = p.sub(lambda m: addref(m.group(1), type), html)
+    html = p.sub(lambda m: addref(ddg, m.group(1), type), html)
     return html
 
 
-def convref(m):
+def convref(ddg, m, type):
     if m.group(2) in ddg:
-        if dictType == 1:
+        if type == 1:
             if ddg[m.group(2)].hasType:
                 return ''.join([m.group(1), 'entry://', m.group(2), '"'])
-        elif dictType == 2:
+        elif type == 2:
             if ddg[m.group(2)].hasblurb:
                 return ''.join([m.group(1), 'entry://', m.group(2), '"'])
     return ''
 
 
-def convrefs(html, type):
-    global dictType
-    dictType = type
+def convrefs(ddg, html, type):
     p = re.compile(r'( *href=")/?dictionary/([^"]+)"')
-    html = p.sub(convref, html)
+    html = p.sub(lambda m: convref(ddg, m, type), html)
     p = re.compile(r'(?<=href=")(/[^"]+")')
     html = p.sub(r'http://www.vocabulary.com\1', html)
     p = re.compile(r'(<a +href="(?:http://|www.)[^">]+") *(?=>)')
@@ -331,7 +327,7 @@ def combinefiles(times):
     picdir = fullpath(dir, 'p')
     if not path.exists(picdir):
         os.mkdir(picdir)
-    global ddg
+    ddg = {}
     style = {}
     for i in xrange(1, times+2):
         subdir = ''.join([dir, '%d'%i, path.sep])
@@ -361,7 +357,7 @@ def combinefiles(times):
             subdir = ''.join([dir, '%d'%idx, path.sep])
             cnt = len(getwordlist(''.join([subdir, 'wordlist.txt'])))
             fn = [''.join([subdir, f]) for f in filelist]
-            mdata = [addrefs(convrefs(readdata(fn[i]).strip(), i), i) for i in xrange(0, 3)]
+            mdata = [addrefs(ddg, convrefs(ddg, readdata(fn[i]).strip(), i), i) for i in xrange(0, 3)]
             warning = []
             if mdata[0].count('\n')+1 != cnt*3:
                 warning.append('WARNING: Entries of file %s is not equal to its wordlist\'s' % fn[0])
