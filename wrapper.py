@@ -120,15 +120,9 @@ def addref(word, type, clean=True):
     return html
 
 
-def subref(m):
-    return addref(m.group(1), dictType)
-
-
 def addrefs(html, type):
-    global dictType
-    dictType = type
     p = re.compile(r'<a>([^</>]+)</a>')
-    html = p.sub(subref, html)
+    html = p.sub(lambda m: addref(m.group(1), type), html)
     return html
 
 
