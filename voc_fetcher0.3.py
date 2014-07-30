@@ -636,7 +636,7 @@ class WordData:
         htmls.extend(['<link rel="stylesheet"href="v.css"type="text/css">',
             '<div class="b t"id="v5A"><a id="%s"></a>'%acr, self.__title])
         if type != 1:
-            style['img.m'] = 'margin-left:0.6em;margin-right:2px;width:16px;height:16px;cursor:pointer'
+            style['img.m'] = 'margin-left:0.6em;width:16px;height:16px;cursor:pointer'
             AUDIO = '<img src="p.png"onclick="l(this,\'%s\')"class=m>'
             for prn in self.__prns:
                 htmls.append(AUDIO % prn)
@@ -716,9 +716,9 @@ class WordData:
         self.__dumped = True
         style['a.q'] = 'text-decoration:none;cursor:default'
         style['a.t'] = 'text-decoration:none'
-        style['div.f'] = 'display:none;float:left;position:absolute;margin:-1.5em 0 0 -0.05em;padding-left:0.3em;border:1px solid gray;border-radius:6px;box-shadow:1.5px 1.5px 0 #D9D9D9;background-color:#F2F2F2;color:gray;letter-spacing:1px;line-height:140%;font-family:Arial;font-size:85%;white-space:nowrap;cursor:pointer'
+        style['div.f'] = 'display:none;float:left;position:absolute;margin:-1.5em 0 0 -0.05em;padding-left:0.3em;border:1px solid gray;border-radius:6px;box-shadow:1.5px 1.5px 3px #D9D9D9;background-color:#F2F2F2;color:gray;letter-spacing:1px;line-height:140%;font-family:Arial;font-size:85%;white-space:nowrap;cursor:pointer'
         style['span.j'] = 'padding:0.8em;color:gray'
-        style['span.p'] = 'display:inline-block;line-height:110%;border:1px solid gray;border-radius:6px;background-color:#F2F2F2;letter-spacing:1px;font-family:Arial;font-size:85%;text-overflow:ellipsis;overflow:hidden;white-space:nowrap'
+        style['span.p'] = 'display:inline-block;line-height:110%;border:1px solid gray;border-radius:6px;box-shadow:-1px -1px 5px #D9D9D9 inset;background-color:#F2F2F2;letter-spacing:1px;font-family:Arial;font-size:85%;text-overflow:ellipsis;overflow:hidden;white-space:nowrap'
         style['span.k'] = 'margin:0.3em 1em 0.2em 0;padding-left:0.3em;width:8.5em;color:gray;cursor:pointer'
         style['span.q'] ='margin:0.3em 0 0.2em 0;width:8.8em;text-align:center'
         style['span.f'] ='display:block;text-overflow:ellipsis;overflow:hidden'
