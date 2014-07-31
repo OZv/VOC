@@ -170,7 +170,11 @@ c.style.display="none";
 var w=W();
 try{
 var a=document.createElement("audio");
-c.parentNode.appendChild(a);
+with(c.parentNode){
+	if(c.nextSibling)
+	insertBefore(a,c.nextSibling);
+	else appendChild(a);
+}
 with(a){
 setAttribute("src",u);
 setAttribute("controls","true");
