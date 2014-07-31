@@ -368,7 +368,11 @@ class WordData:
                 self.__prns.append(str(a['name']))
 
     def __transfchswdBd(self, div, link):
-        tl = div.find_all(lambda tag: tag.name!='img')
+        tl = div.find_all(lambda e:
+            (e.name=='p' or e.name=='a' or e.name=='div') and e.get_text(strip=True)=='')
+        for tag in tl:
+            tag.unwrap()
+        tl = div.find_all(lambda e: e.name!='img')
         for tag in tl:
             del tag['class']
             del tag['id']
@@ -399,12 +403,19 @@ class WordData:
                 blk.name = 'div'
                 blk['class'] = 'g q'
         il = div.find_all('img')
+        p = re.compile(r'font-size\s*:\s*\d+\s*(?:px|em|%)\s*;?\s*', re.I)
         for img in il:
             if 'class' in img.attrs and img['class'][0]=='main':
                 img.extract()
                 continue
-            del img['alt']
-            del img['class']
+            for attr in ['alt', 'class', 'width', 'height']:
+                del img[attr]
+            if img.previous_sibling and img.previous_sibling.name == 'img':
+                img['style'] = 'margin:2px'
+            if 'style' in img.attrs:
+                img['style'] = p.sub('', img['style'])
+                if len(img['style'].strip()) == 0:
+                    del img['style']
             file, ext = path.splitext(img['src'])
             file = path.sep.join(['p', ''.join([randomstr(3), ext])])
             url = img['src']
@@ -412,6 +423,17 @@ class WordData:
                 url = ''.join([link, url])
             dump(getpage(url), file, 'wb')
             img['src'] = file.replace(path.sep, '/')
+        adl = div.find_all('audio')
+        for ad in adl:
+            if 'src' in ad.attrs:
+                src = ad['src']
+            else:
+                src = ad.source['src']
+            del ad.contents[:]
+            ad.name = 'img'
+            ad.attrs.clear()
+            ad['src'] = 'q.png'
+            ad['onclick'] = ''.join(['L(this, \'', src, '\')'])
         sl = div.find_all('source')
         for source in sl:
             if source.parent.name == 'div':
@@ -425,6 +447,8 @@ class WordData:
         self.__chswdBd = p.sub(r' ', self.__chswdBd)
         p = re.compile(r'\s*<br/?>\s*(</?div)')
         self.__chswdBd = p.sub(r'\1', self.__chswdBd)
+        p = re.compile(r'\s*</img>\s*')
+        self.__chswdBd = p.sub('', self.__chswdBd)
 
     def __getmore(self, link):
         page = getpage(link)
@@ -669,9 +693,9 @@ class WordData:
                 style['div.l'] = 'color:green;font-weight:bold'
                 style['div.q'] = 'padding:0.3em 2.4em 0.3em'
                 style['div.e'] = 'text-align:center'
-                style['fieldset.a'] = 'font-family:Arial;font-size:90%;border-radius:3px;border:1px dashed gray'
-                style['span.d'] = 'font-family:Helvetica;font-weight:bold'
-                style['span.r'] = 'color:gray;font-size:80%'
+                style['fieldset.a'] = 'font-family:Arial;border-radius:3px;border:1px dashed gray'
+                style['span.d'] = 'font-family:Helvetica;font-size:90%;font-weight:bold'
+                style['span.r'] = 'color:gray;font-size:90%'
                 style['p.q'] = 'margin:0.3em 0'
                 style['p.i'] = 'text-indent:1.2em;margin:0.3em 0'
                 htmls.append(MARGIN)
@@ -717,9 +741,9 @@ class WordData:
         self.__dumped = True
         style['a.q'] = 'text-decoration:none;cursor:default'
         style['a.t'] = 'text-decoration:none'
-        style['div.f'] = 'display:none;float:left;position:absolute;margin:-1.5em 0 0 -0.05em;padding-left:0.3em;border:1px solid gray;border-radius:6px;box-shadow:1.5px 1.5px 3px #D9D9D9;background-color:#F2F2F2;color:gray;letter-spacing:1px;line-height:140%;font-family:Arial;font-size:85%;white-space:nowrap;cursor:pointer'
+        style['div.f'] = 'display:none;float:left;position:absolute;margin:-1.4em 0 0 -0.05em;padding-left:0.3em;width:8.5em;border:1px solid gray;border-radius:6px;box-shadow:1.5px 1.5px 3px #D9D9D9;background-color:#F2F2F2;color:gray;letter-spacing:1px;line-height:140%;font-family:Arial;font-size:85%;white-space:nowrap;cursor:pointer'
         style['span.j'] = 'padding:0.8em;color:gray'
-        style['span.p'] = 'display:inline-block;line-height:110%;border:1px solid gray;border-radius:6px;box-shadow:-1px -1px 5px #D9D9D9 inset;background-color:#F2F2F2;letter-spacing:1px;font-family:Arial;font-size:85%;text-overflow:ellipsis;overflow:hidden;white-space:nowrap'
+        style['span.p'] = 'display:inline-block;line-height:110%;border:1px solid gray;border-radius:6px;box-shadow:-1px -1px 2px #D9D9D9 inset;background-color:#F2F2F2;letter-spacing:1px;font-family:Arial;font-size:85%;text-overflow:ellipsis;overflow:hidden;white-space:nowrap'
         style['span.k'] = 'margin:0.3em 1em 0.2em 0;padding-left:0.3em;width:8.5em;color:gray;cursor:pointer'
         style['span.q'] ='margin:0.3em 0 0.2em 0;width:8.8em;text-align:center'
         style['span.f'] ='display:block;text-overflow:ellipsis;overflow:hidden'
