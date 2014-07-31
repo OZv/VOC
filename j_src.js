@@ -100,11 +100,8 @@ function e(c,v){
 v=v?v:window.event;
 v.cancelBubble=true;
 with(c){
-with(nextSibling.style){
-	display="block";
-	width=style.width;
-}
-style.visibility="hidden";
+	nextSibling.style.display="block";
+	style.visibility="hidden";
 }
 }
 function r(s){
@@ -164,17 +161,42 @@ play();
 c.style.outline="";
 }
 }
+function W(){
+var w=window.innerWidth||document.documentElement.clientWidth||document.body.clientWidth;
+return parseInt(w*0.8);
+}
+function L(c,u){
+c.style.display="none";
+var w=W();
+try{
+var a=document.createElement("audio");
+c.parentNode.appendChild(a);
+with(a){
+setAttribute("src",u);
+setAttribute("controls","true");
+with(style){
+width=50;
+margin="8px 0";
+transition="width 2s";
+setTimeout(function(){width=w<300?w:300;},1000);
+}
+play();
+}
+}catch(e){
+}
+}
 function z(){
 var g=document.getElementsByTagName('img');
-var w=window.innerWidth||document.documentElement.clientWidth||document.body.clientWidth;
-w*=0.8;
+var a=document.getElementsByTagName('audio');
+var w=W();
 for(var i=0;i<g.length;i++)
 with(g[i])
-if(width>=w){
-var r=w/width;
-width=parseInt(w);
-height=parseInt(height*r);
-}
+if(width>w)
+width=w;
+for(var i=0;i<a.length;i++)
+with(a[i].style)
+if(parseInt(width)>w)
+width=w;
 }
 function k(){
 if(x){
