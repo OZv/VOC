@@ -37,7 +37,7 @@ https://bitbucket.org/vinay.sajip/pylauncher/downloads/launcher.msi
       不需要用代理，该网站不封IP（如果开几百个进程有可能会被服务器拒绝访问，未实测）  
       单进程的情况下实测平均下载速度为每分钟60个单词左右  
       如果下载单词量大建议多开进程，按目前默认25个的设置，下完148730个单词需要大概1.5~2小时  
-8. 双击wrapper.py，会自动生成mdict目录，并将单词分块开始下载。下载完后自动合并
+8. 双击wrapper.py，会自动生成mdict目录，并将单词分块开始下载。下载完后自动合并。  
 如果双击voc_fetcher0.3.py，也会开始下载，但只支持一个进程  
 有一些错误检测和后期格式处理只在wrapper.py写了，本人懒得再往voc_fetcher0.3.py里加  
 因此为了确保最后生成的文件正确，即使只打算开一个进程也推荐双击wrapper.py执行  
