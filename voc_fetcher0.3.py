@@ -252,6 +252,8 @@ class Example:
             self.__date = vol[date][:4]
         else:
             self.__corpusname = vol['corpus']['name']
+            if int(vol[date][:4]) <= 1900:
+                date = 'dateAdded'
             dt = datetime.strptime(vol[date][:10], '%Y-%m-%d')
             self.__date = dt.strftime('%b %d, %Y')
 
@@ -433,7 +435,7 @@ class WordData:
             ad.name = 'img'
             ad.attrs.clear()
             ad['src'] = 'q.png'
-            ad['onclick'] = ''.join(['L(this, \'', src, '\')'])
+            ad['onclick'] = ''.join(['L(this,\'', src, '\')'])
         sl = div.find_all('source')
         for source in sl:
             if source.parent.name == 'div':
