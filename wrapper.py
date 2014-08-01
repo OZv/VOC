@@ -23,6 +23,7 @@ import time
 import json
 import shutil
 import urllib2
+import hashlib
 from os import path
 from multiprocessing import Pool
 
@@ -58,12 +59,12 @@ def fullpath(file, suffix=''):
     return ''.join([os.getcwd(), path.sep, file, suffix])
 
 
-def readdata(file):
+def readdata(file, mod='rU'):
     fp = fullpath(file)
     if not path.exists(fp):
         print(file + " was not found under the same dir of this tool.")
     else:
-        fr = open(fp, 'rU')
+        fr = open(fp, mod)
         try:
             return fr.read()
         finally:
@@ -315,6 +316,37 @@ def gen_wordlist(ordered):
     return ldict, sty
 
 
+def removedupl(picdir):
+    dict = {}
+    rep = {}
+    for f in os.listdir(fullpath(picdir)):
+        fp = path.sep.join([picdir, f])
+        hash = hashlib.md5()
+        hash.update(readdata(fp, 'rb'))
+        md5 = hash.hexdigest()
+        if md5 in dict:
+            rep[f] = dict[md5]
+            os.remove(fp)
+        else:
+            dict[md5] = f
+    return rep
+
+
+def subsrc(img, rep, p):
+    m = p.search(img)
+    if m:
+        for k, v in rep.iteritems():
+            if m.group(1)==k:
+                img = p.sub(v, img)
+    return img
+
+
+def replacepic(html, rep):
+    p = re.compile(r'<img +[^>]+>')
+    sp = re.compile(r'(?<=src="p/)([^"]+)(?=")')
+    return p.sub(lambda m: subsrc(m.group(0), rep, sp), html)
+
+
 def combinefiles(times):
     dir = ''.join(['mdict', path.sep])
     mdg = fullpath(dir, 'digest')
@@ -352,12 +384,15 @@ def combinefiles(times):
     dump(digest, ''.join([dir, 'digest']))
     href = re.compile(r'href=(?!["\'](?:entry|http|www.|javascript|\w+.css))[^>]+>', re.I)
     logs = []
+    rep = removedupl(''.join([dir, 'p']))
     try:
         for idx in xrange(1, times+2):
             subdir = ''.join([dir, '%d'%idx, path.sep])
             cnt = len(getwordlist(''.join([subdir, 'wordlist.txt'])))
             fn = [''.join([subdir, f]) for f in filelist]
             mdata = [addrefs(ddg, convrefs(ddg, readdata(fn[i]).strip(), i), i) for i in xrange(0, 3)]
+            for i in [0, 2]:
+                mdata[i] = replacepic(mdata[i], rep)
             warning = []
             if mdata[0].count('\n')+1 != cnt*3:
                 warning.append('WARNING: Entries of file %s is not equal to its wordlist\'s' % fn[0])
@@ -370,7 +405,7 @@ def combinefiles(times):
                 logs.extend(link)
             [fw[i].write(''.join([mdata[i], '\n']) if mdata[i] else '') for i in xrange(0, 3)]
         for k, v in sorted(ldict.iteritems(), key=lambda d: d[0]):
-            [fw[i].write('\n'.join([k, addrefs(v, i), '</>\n'])) for i in [0, 2]]
+            [fw[i].write('\n'.join([k, addrefs(ddg, v, i), '</>\n'])) for i in [0, 2]]
     finally:
         [fw[i].close() for i in xrange(0, 3)]
     if logs:
@@ -383,7 +418,7 @@ def combinefiles(times):
 
 if __name__ == '__main__':
     STEP = 1000
-    MAX_PROCESS = 20
+    MAX_PROCESS = 25
     wordlist = getwordlist('wordlist.txt')
     if len(wordlist):
         times = multiprocess_fetcher(wordlist, STEP, MAX_PROCESS)
