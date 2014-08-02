@@ -121,8 +121,12 @@ if(n=='LIT'||n=='GUT')
 n=author+', <i>'+title+'</i>';
 else{
 n=corpus.name;
+if(parseInt(y,10)<=1900){
+t=dateAdded;
+y=t.substr(0,4);
+}
 with(t)
-	y=M[parseInt(substr(5,2))-1]+' '+substr(8,2)+', '+y;
+	y=M[parseInt(substr(5,2),10)-1]+' '+substr(8,2)+', '+y;
 }
 }
 }
@@ -199,7 +203,7 @@ if(width>w)
 width=w;
 for(var i=0;i<a.length;i++)
 with(a[i].style)
-if(parseInt(width)>w)
+if(parseInt(width,10)>w)
 width=w;
 }
 function k(){
