@@ -269,6 +269,10 @@ for(var i=0;i<m.length;i++)
 if(m[i].onclick)
 m[i].style.display="none";
 }
+var h=document.getElementsByTagName('a');
+for(var i=0;i<h.length;i++)
+if(h[i].onclick)
+h[i].href='javascript:void(0);';
 }
 if(!Z){
 if(window.addEventListener)
