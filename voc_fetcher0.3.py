@@ -132,7 +132,7 @@ class Definition:
                 sddl.extend(self.__showmore(dl.dd.a, pos))
                 assert dds[1].a['href'].startswith('javascript:')
                 a = self.__addcode(dds[1].a, 'h')
-                sddl.extend([str(a), '<br>'])
+                sddl.extend([self.__str(a), '<br>'])
                 sddl.extend(self.__transdd(dds[2:]))
                 sddl.append('</div>')
             else:
@@ -169,10 +169,16 @@ class Definition:
             self.__synonym = instances
             self.__type = None
 
+    def __str(self, a):
+        del a['href']
+        a['class'] = 'm_'
+        a.name = 'span'
+        return str(a)
+
     def __showmore(self, a, pos):
         self.__judgeHascode(pos)
         a = self.__addcode(a, 'm')
-        return ['<div>', str(a), '</div><div class=v>']
+        return ['<div>', self.__str(a), '</div><div class=v>']
 
     def __addcode(self, a, func):
         a['onclick'] = ''.join([func, '(this)'])
@@ -222,19 +228,29 @@ class Definition:
             instances = self.__synonym
         else:
             instances = self.__type
-        CAPSTY = '<div class="y d">%s</div>'
+        CAPSTY = '<span onclick="s_(this,%d)"class=y_>%s</span>'
         TXSTY = '<div class=p>%s</div>'
+        caps = []
+        txts = []
         if instances:
+            i = 0
             for instance in instances:
                 caption = instance.keys()[0]
                 if caption:
                     if caption.startswith('Types'):
-                        caption = 'Hyponyms:'
+                        caption = 'Hyponyms'
                     elif caption.startswith('Type of'):
-                        caption = 'Hypernyms:'
-                    htmls.append(CAPSTY % caption)
+                        caption = 'Hypernyms'
+                    caps.append(CAPSTY % (i, caption.rstrip(':')))
+                    i += 1
                 if instance.values()[0]:
-                    htmls.append(TXSTY % addrefs(instance.values()[0], type))
+                    txts.append(TXSTY % addrefs(instance.values()[0], type))
+        if caps:
+            htmls.extend(['<div class="y d">', '<span class="h">|</span>'.join(caps), '</div>'])
+        if txts:
+            htmls.append('<div>')
+            htmls.extend(txts)
+            htmls.append('</div>')
         return htmls
 
 
@@ -441,6 +457,8 @@ class WordData:
             if source.parent.name == 'div':
                 source.extract()
         self.__chswdBd = unwraptag(div).strip()
+        p = re.compile(r'<iframe[^>]*>(\s*)</iframe>', re.I)
+        self.__chswdBd = p.sub(r'\1', self.__chswdBd)
         p = re.compile(r'(</?)\s*strong\s*(?=>)', re.I)
         self.__chswdBd = p.sub(r'\1b', self.__chswdBd)
         p = re.compile(r'(</?)\s*em\s*(?=>)', re.I)
@@ -610,17 +628,40 @@ class WordData:
                 '<div class="l t">', self.__chswdHd, '</div>',
                 self.__chswdBd, '</fieldset>']
 
+    def __hastitleword(self, v):
+        for c in v[1]:
+            if c == self.__title:
+                return True
+        return False
+
+    def __formatwfgrp(self, htmls, p, v, type):
+        htmls.append('<b>%s</b>: ' % addref(p, type))
+        for c in v[1]:
+            htmls.append(addref(c, type))
+            htmls.append(', ')
+        htmls[-1] = htmls[-1].rstrip(':, ')
+        return htmls
+
     def __formatwdfmls(self, type):
-        htmls = ['<div class=a>']
+        htmls = []
+        hide = []
+        if self.__title in self.__wdfmls:
+            self.__formatwfgrp(htmls, self.__title, self.__wdfmls[self.__title], type)
         for p, v in sorted(self.__wdfmls.items(), key=lambda d: d[1][0]):
-            htmls.append('<b>%s</b>: ' % addref(p, type))
-            for c in v[1]:
-                htmls.append(addref(c, type))
-                htmls.append(', ')
-            htmls[-1] = htmls[-1].rstrip(':, ')
-            htmls.append('|')
-        html = ''.join(htmls).rstrip('|')
-        return ''.join([html.replace('|', '<span class=h>/</span>'), '</div>'])
+            if not htmls and self.__hastitleword(v):
+                self.__formatwfgrp(htmls, p, v, type)
+            elif p != self.__title:
+                hide.append('|')
+                self.__formatwfgrp(hide, p, v, type)
+        if not htmls:
+            raise AssertionError('%s'%self.__title)
+        if hide:
+            html = ''.join([''.join(htmls), '<span  onclick="e_(this)"class=s_></span><span class=w_>', ''.join(hide), '</span>'])
+            p =re.compile(r'(?<=<span class=w_>)\|')
+            html = p.sub(r'<span onclick="t_(this)"class=h>/</span>', html)
+        else:
+            html = ''.join(htmls)
+        return ''.join(['<div class=a>', html.replace('|', '<span class=h>/</span>'), '</div>'])
 
     def __formatfulldef(self, defl, type, style, lmargin=True):
         htmls = []
@@ -658,19 +699,18 @@ class WordData:
         style['div.v'] = 'display:none'
         MARGIN = '<div class=m></div>'
         acr = randomstr(4)
-        htmls = [] if type==1 else ['<script src="j.js"type="text/javascript"async></script>']
-        htmls.extend(['<link rel="stylesheet"href="v.css"type="text/css">',
-            '<div class="b t"id="v5A"><a id="%s"></a>'%acr, self.__title])
+        htmls = ['<link rel="stylesheet"href="v.css"type="text/css">',
+            '<div class="b t"id="v5A"><a id="%s"></a>'%acr, self.__title]
         if type != 1:
             style['img.m'] = 'margin-left:0.6em;width:16px;height:16px;cursor:pointer'
             AUDIO = '<img src="p.png"onclick="l(this,\'%s\')"class=m>'
             for prn in self.__prns:
                 htmls.append(AUDIO % prn)
         htmls.append('</div>')
-        style['div.a'] = 'font-family:Arial'
+        style['div.a'] = 'font-family:Helvetica'
         style['div.g'] = 'color:gray'
         style['div.d'] = 'font-size:90%'
-        style['div.n'] = 'color:navy'
+        style['div.n'] = 'letter-spacing:0.5px;color:#369'
         FREQ = '<div class="a g d">(%s)</div>'
         htmls.append(FREQ % self.__wdfrq)
         htmls.append('<br>')
@@ -695,7 +735,7 @@ class WordData:
                 style['div.l'] = 'color:green;font-weight:bold'
                 style['div.q'] = 'padding:0.3em 2.4em 0.3em'
                 style['div.e'] = 'text-align:center'
-                style['fieldset.a'] = 'font-family:Arial;border-radius:3px;border:1px dashed gray'
+                style['fieldset.a'] = 'font-family:Helvetica;border-radius:3px;border:1px dashed gray'
                 style['span.d'] = 'font-family:Helvetica;font-size:90%;font-weight:bold'
                 style['span.r'] = 'color:gray;font-size:90%'
                 style['p.q'] = 'margin:0.3em 0'
@@ -704,6 +744,11 @@ class WordData:
                 htmls.extend(self.__formatsidebar())
             if self.__wdfmls:
                 style['span.h'] = 'color:gray;font-family:\'Trebuchet MS\';padding:0 0.3em 0 0.3em'
+                style['span.h[onclick]:hover'] = 'text-decoration:underline'
+                style['span.s_, span.y_, span.m_, span.h[onclick]'] = 'cursor:pointer'
+                style['span.s_:after'] = 'content:"...";display:inline-block;margin-left:0.5em;padding:1px;font-size:80%;line-height:70%;font-family:Helvetica;color:#888;outline:1px solid #CCC;white-space:nowrap'
+                style['span.s_:hover:after'] = 'background-color:#EEF'
+                style['span.w_'] = 'display:none'
                 htmls.append(MARGIN)
                 htmls.append(SECHD % 'WORD FAMILY')
                 htmls.append(self.__formatwdfmls(type))
@@ -720,8 +765,10 @@ class WordData:
                 htmls.append('</div></div>')
         htmls.append('<div class="a m">')
         style['span.t'] = 'font-family:\'Lucida Grande\',\'Lucida Sans Unicode\''
-        style['div.y'] = 'font-family:Helvetica;color:#2F6771;font-weight:bold'
-        style['div.p'] = 'padding-left:1em'
+        style['div.y'] = 'font-family:Helvetica;color:#287;font-weight:bold'
+        style['div.p'] = 'padding-left:1em;display:none'
+        style['span.y_:hover'] = 'text-decoration:underline'
+        style['span.m_'] = 'color:blue;text-decoration:underline'
         if len(self.__fuldefs) == 1:
             htmls.extend(self.__formatfulldef(self.__fuldefs[0], type, style, False))
         else:
@@ -735,17 +782,19 @@ class WordData:
                 htmls.extend(self.__formatfulldef(fuldef, type, style))
         htmls.append('</div>')
         if type == 1:
+            htmls.append('<script>document.write(\'<script>function s_(c,n){with(c.parentNode.nextSibling)for(var i=0;i<childNodes.length;i++)with(childNodes[i].style)if(i==n){if(display=="block")display="none";else display="block";}else display="none";}')
             if self.__hascode[1]:
-                htmls.append('<script>document.write(\'<script>function m(c){with(c.parentNode){style.display="none";nextSibling.style.display="block";}}function h(c){with(c.parentNode){previousSibling.style.display="block";style.display="none";}}<\/script>\');</script>')
+                htmls.append('function m(c){with(c.parentNode){style.display="none";nextSibling.style.display="block";}}function h(c){with(c.parentNode){previousSibling.style.display="block";style.display="none";}}')
+            htmls.append('<\/script>\');</script>')
         else:
-            htmls.extend(['<script>if(typeof(Z)=="undefined"){var l=document.getElementsByTagName("link");var r=/v.css$/;for(var i=l.length-1;i>=0;i--)with(l[i].href){var m=match(r);if(m&&l[i].nextSibling.id=="v5A")',
-                '{document.write(\'<script src="\'+replace(r,"j.js")+\'"type="text/javascript"async><\/script>\');break;}}}</script>'])
+            htmls.extend(['<script src="j.js"type="text/javascript"></script><script>if(typeof(Z)=="undefined"){var _l=document.getElementsByTagName("link");var _r=/v.css$/;for(var i=_l.length-1;i>=0;i--)with(_l[i].href){var _m=match(_r);if(_m&&_l[i].nextSibling.id=="v5A")',
+                '{document.write(\'<script src="\'+replace(_r,"j.js")+\'"type="text/javascript"><\/script>\');break;}}}</script>'])
         self.__dumped = True
         style['a.q'] = 'text-decoration:none;cursor:default'
         style['a.t'] = 'text-decoration:none'
-        style['div.f'] = 'display:none;float:left;position:absolute;margin:-1.4em 0 0 -0.05em;padding-left:0.3em;width:8.5em;border:1px solid gray;border-radius:6px;box-shadow:1.5px 1.5px 3px #D9D9D9;background-color:#F2F2F2;color:gray;letter-spacing:1px;line-height:140%;font-family:Arial;font-size:85%;white-space:nowrap;cursor:pointer'
+        style['div.f'] = 'display:none;float:left;position:absolute;margin:-1.4em 0 0 -0.05em;padding-left:0.3em;width:8.5em;border:1px solid gray;border-radius:6px;box-shadow:1.5px 1.5px 3px #D9D9D9;background-color:#F2F2F2;color:gray;letter-spacing:1px;line-height:140%;font-family:Helvetica;font-size:85%;white-space:nowrap;cursor:pointer'
         style['span.j'] = 'padding:0.8em;color:gray'
-        style['span.p'] = 'display:inline-block;line-height:110%;border:1px solid gray;border-radius:6px;box-shadow:-1px -1px 2px #D9D9D9 inset;background-color:#F2F2F2;letter-spacing:1px;font-family:Arial;font-size:85%;text-overflow:ellipsis;overflow:hidden;white-space:nowrap'
+        style['span.p'] = 'display:inline-block;line-height:110%;border:1px solid gray;border-radius:6px;box-shadow:-1px -1px 2px #D9D9D9 inset;background-color:#F2F2F2;letter-spacing:1px;font-family:Helvetica;font-size:85%;text-overflow:ellipsis;overflow:hidden;white-space:nowrap'
         style['span.k'] = 'margin:0.3em 1em 0.2em 0;padding-left:0.3em;width:8.5em;color:gray;cursor:pointer'
         style['span.q'] ='margin:0.3em 0 0.2em 0;width:8.8em;text-align:center'
         style['span.f'] ='display:block;text-overflow:ellipsis;overflow:hidden'
