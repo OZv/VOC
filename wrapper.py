@@ -233,8 +233,7 @@ def multiprocess_fetcher(wordlist, STEP, MAX_PROCESS):
 
 
 def makeentry(title, cnt, ordered):
-    htmls = ['<script src="l.js"type="text/javascript"async></script>',
-        '<link rel="stylesheet"href="l.css"type="text/css">']
+    htmls = ['<link rel="stylesheet"href="l.css"type="text/css">']
     htmls.extend(['<div class="b t"id="iZw">', title,
         '</div><div class="a g d">(', str(cnt), ' words)</div><br>',
         '<div onresize="w()"class=z></div><div>'])
@@ -271,8 +270,8 @@ def makeentry(title, cnt, ordered):
     htmls.append('</div><input type="hidden"value="0"><hr class=s><div>')
     htmls.extend(txt)
     htmls.append('</div><div id="Z1w"class=t></div>')
-    htmls.extend(['<script>if(typeof(F)=="undefined"){var l=document.getElementsByTagName("link");var r=/l.css$/;for(var i=l.length-1;i>=0;i--)with(l[i].href){var m=match(r);if(m&&l[i].nextSibling.id=="iZw")',
-        '{document.write(\'<script src="\'+replace(r,"l.js")+\'"type="text/javascript"async><\/script>\');break;}}}</script>'])
+    htmls.extend(['<script src="l.js"type="text/javascript"></script><script>if(typeof(F)=="undefined"){var _l=document.getElementsByTagName("link");var _r=/l.css$/;for(var i=_l.length-1;i>=0;i--)with(_l[i].href){var _m=match(_r);if(_m&&_l[i].nextSibling.id=="iZw")',
+        '{document.write(\'<script src="\'+replace(_r,"l.js")+\'"type="text/javascript"><\/script>\');break;}}}</script>'])
     return ''.join(htmls)
 
 
@@ -291,7 +290,7 @@ def gen_wordlist(ordered):
     style['a'] = 'text-decoration:none'
     style['div.b'] = 'color:blue;font-weight:bold;font-size:120%'
     style['div.t'] = 'font-family:\'Lucida Grande\',\'Lucida Sans Unicode\''
-    style['div.a'] = 'font-family:Arial'
+    style['div.a'] = 'font-family:Helvetica'
     style['div.g'] = 'color:gray'
     style['div.d'] = 'font-size:90%'
     style['div.v'] = 'display:none'
@@ -375,6 +374,7 @@ def combinefiles(times):
         sty.extend([k, '{', v, '}'])
     dump(''.join(sty), ''.join([dir, 'v.css']))
     print "%d entries totally." % len(ddg.keys())
+    print "combining files..."
     ordered = sorted(ddg.items(), key=lambda d: d[1].ffreq)
     ldict, sty = gen_wordlist(ordered)
     dump(''.join(sty), ''.join([dir, 'l.css']))
