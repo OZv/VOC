@@ -27,13 +27,19 @@ with(c.parentNode){
 }
 }
 function h(c,n){
-with(c.parentNode.nextSibling)
+with(c.parentNode){
+for(var i=0;i<childNodes.length;i++)
+	with(childNodes[i].style)
+		textDecoration="";
+with(nextSibling)
 for(var i=0;i<childNodes.length;i++)
 with(childNodes[i].style)
 	if(i==n){
 		if(display=="block")
-		display="none";else display="block";
+			display="none";
+		else{display="block";c.style.textDecoration="underline";}
 	}else display="none";
+}
 }
 function g(c,w){
 R(c);
