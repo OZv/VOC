@@ -16,18 +16,6 @@ x=null;
 Z=null;
 M=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 D=[null,"F","A","N","B","S","M","T"];
-function m(c){
-with(c.parentNode){
-style.display="none";
-nextSibling.style.display="block";
-}
-}
-function h(c){
-with(c.parentNode){
-previousSibling.style.display="block";
-style.display="none";
-}
-}
 function e_(c){
 c.style.display="none";
 c.nextSibling.style.display="inline";
@@ -38,7 +26,7 @@ with(c.parentNode){
 	previousSibling.style.display="inline-block";
 }
 }
-function s_(c,n){
+function h(c,n){
 with(c.parentNode.nextSibling)
 for(var i=0;i<childNodes.length;i++)
 with(childNodes[i].style)
@@ -51,7 +39,7 @@ function g(c,w){
 R(c);
 x.onload=function(){
 if(x.readyState==4&&x.status==200&&x.responseText){
-var h=r(x.responseText);
+var h=r_(x.responseText);
 if(h){
 with(c.parentNode.nextSibling){
 	innerHTML=h;
@@ -123,7 +111,7 @@ with(c){
 	style.visibility="hidden";
 }
 }
-function r(s){
+function r_(s){
 var j=eval("("+s+")");
 var h='';
 var a=j.result.sentences;
@@ -167,11 +155,11 @@ with(c.style){
 	cursor="pointer";
 }
 }
-function l(c,f){
+function v(c,f){
 R(c);
 c.style.outline="1px dotted gray";
 var u="http://s3.amazonaws.com/audio.vocabulary.com/1.0/us/"+f+".mp3";
-var b=function(){c.style.outline="";A(c,"l(this,'"+f+"')");};
+var b=function(){c.style.outline="";A(c,"v(this,'"+f+"')");};
 var t=setTimeout(b,2000);
 try{
 with(document.createElement("audio")){
@@ -253,6 +241,7 @@ if(window.XDomainRequest)
 x=new XDomainRequest();
 else x=null;
 }
+var m=document.getElementsByTagName('img');
 if(x){
 if(window.addEventListener)
 document.addEventListener('click',k,false);
@@ -282,8 +271,18 @@ t.push(encodeURI(u[i].innerText));
 }
 for(var i=0;i<Z.length;i++)
 Z[i].push(t[i]);
+for(var i=0;i<m.length;i++)
+with(m[i])if(className=="m"){
+var e;
+if(document.createEvent){
+e = document.createEvent("HTMLEvents");
+e.initEvent('click',0,1);
+dispatchEvent(e);
+}else if(fireEvent)
+fireEvent('onclick');
+break;
+}
 }else{
-var m=document.getElementsByTagName('img');
 for(var i=0;i<m.length;i++)
 if(m[i].onclick)
 m[i].style.display="none";
