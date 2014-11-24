@@ -349,7 +349,7 @@ def combinefiles(times):
     mdg = fullpath(dir, 'digest')
     if path.exists(mdg):
         return
-    filelist = ['vocabulary.txt', 'vocabulary_Basic.txt', 'vocabulary_Lite.txt']
+    filelist = ['vocabulary.txt', 'vocabulary_basic.txt', 'vocabulary_lite.txt']
     mfile = [fullpath(dir, f) for f in filelist]
     fw = [open(f, 'w') for f in mfile]
     picdir = fullpath(dir, 'p')
