@@ -1,18 +1,4 @@
-// Copyright (C) 2014 bt4baidu@pdawiki forum
-// http://pdawiki.com/forum
-//
-// This program is a free software; you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, version 3 of the License.
-//
-// You can get a copy of GNU General Public License along this program
-// But you can always get it from http://www.gnu.org/licenses/gpl.txt
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU General Public License for more details.
-function v(c,n){
+function u(c,n){
 with(c.parentNode){
 	var b=nextSibling;
 	var i=parseInt(b.value);
@@ -25,7 +11,7 @@ with(c.parentNode){
 		backgroundColor="";
 	}
 	b=b.nextSibling.nextSibling;
-	u(b.childNodes[n],b.nextSibling);
+	v_(b.childNodes[n],b.nextSibling);
 }
 with(c.style){
 	color="#369";
@@ -38,7 +24,7 @@ function d(w){
 var n=parseInt(w/90)+1;
 return n*90-w;
 }
-function u(p,l){
+function v_(p,l){
 l.innerHTML=p.innerHTML;
 var n=document.createElement("span");
 n.style.visibility="hidden";
@@ -70,7 +56,7 @@ for(var i=0;i<v.length;i++)
 with(v[i]){
 	if(id=="Z1w"){
 	var n=parseInt(previousSibling.previousSibling.previousSibling.value);
-	u(previousSibling.childNodes[n],v[i]);
+	v_(previousSibling.childNodes[n],v[i]);
 	}
 }
 }
