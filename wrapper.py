@@ -26,6 +26,7 @@ import urllib2
 import hashlib
 from os import path
 from multiprocessing import Pool
+from collections import OrderedDict
 
 
 def valid_proxylist(file):
@@ -96,14 +97,7 @@ ENTLINK = '<a href="entry://%s">%s</a>'
 
 def addref(ddg, word, type, clean=True):
     if word in ddg:
-        if type == 1:
-            if ddg[word].hasType:
-                html = ENTLINK % (word, word)
-            elif clean:
-                html = word
-            else:
-                html = ''.join(['<a>', word, '</a>'])
-        elif type == 2:
+        if type == 2:
             if ddg[word].hasblurb:
                 html = ENTLINK % (word, word)
             elif clean:
@@ -127,10 +121,7 @@ def addrefs(ddg, html, type):
 
 def convref(ddg, m, type):
     if m.group(2) in ddg:
-        if type == 1:
-            if ddg[m.group(2)].hasType:
-                return ''.join([m.group(1), 'entry://', m.group(2), '"'])
-        elif type == 2:
+        if type == 2:
             if ddg[m.group(2)].hasblurb:
                 return ''.join([m.group(1), 'entry://', m.group(2), '"'])
     return ''
@@ -151,17 +142,12 @@ class WordData:
     def __init__(self, digest):
         if digest:
             self.__hasblurb = digest[0]
-            self.__hasType = digest[1]
-            self.__dumped = digest[2]
-            self.__ffreq = digest[3]
+            self.__dumped = digest[1]
+            self.__ffreq = digest[2]
 
     @property
     def hasblurb(self):
         return self.__hasblurb
-
-    @property
-    def hasType(self):
-        return self.__hasType
 
     @property
     def dumped(self):
@@ -173,8 +159,7 @@ class WordData:
 
     @property
     def digest(self):
-        return [int(self.__hasblurb), int(self.__hasType), int(self.__dumped),
-            self.__ffreq]
+        return [int(self.__hasblurb), int(self.__dumped), self.__ffreq]
 
 
 class DjEncoder(json.JSONEncoder):
@@ -255,7 +240,7 @@ def makeentry(title, cnt, ordered):
     txt = []
     i = 0
     for k, vl in cata:
-        idx.append('<span onclick="v(this,%d)"' % i)
+        idx.append('<span onclick="u(this,%d)"' % i)
         if i==0:
             idx.append('style="color:#369;border:1px solid #369;box-shadow:-1px -1px 3px #A9BCF5 inset;background-color:#CEE3F6"')
         idx.extend(['class=x>', k, '</span>'])
@@ -270,8 +255,8 @@ def makeentry(title, cnt, ordered):
     htmls.append('</div><input type="hidden"value="0"><hr class=s><div>')
     htmls.extend(txt)
     htmls.append('</div><div id="Z1w"class=t></div>')
-    htmls.extend(['<script src="l.js"type="text/javascript"></script><script>if(typeof(F)=="undefined"){var _l=document.getElementsByTagName("link");var _r=/l.css$/;for(var i=_l.length-1;i>=0;i--)with(_l[i].href){var _m=match(_r);if(_m&&_l[i].nextSibling.id=="iZw")',
-        '{document.write(\'<script src="\'+replace(_r,"l.js")+\'"type="text/javascript"><\/script>\');break;}}}</script>'])
+    htmls.extend(['<script src="l.js"type="text/javascript"></script><script>if(typeof(F)=="undefined"){var l=document.getElementsByTagName("link");var r=/l.css$/;for(var i=l.length-1;i>=0;i--)with(l[i].href){var m=match(r);if(m&&l[i].nextSibling.id=="iZw")',
+        '{document.write(\'<script src="\'+replace(r,"l.js")+\'"type="text/javascript"><\/script>\');break;}}}</script>'])
     return ''.join(htmls)
 
 
@@ -346,13 +331,25 @@ def replacepic(html, rep):
     return p.sub(lambda m: subsrc(m.group(0), rep, sp), html)
 
 
+def addrank(html, od):
+    if html:
+        entries = html.strip().split('\n</>\n')
+        i = 0
+        for en in entries:
+            k = en[:en.find('\n')]
+            p = re.compile(r'(?<=<div class="a g d">)(\(once[^<>]+?\))(?=</div>)')
+            entries[i] = p.sub(''.join(['<span title="', str(od[k]), '">', r'\1</span>']), en)
+            i += 1
+        return '\n</>\n'.join(entries)
+    return html
+
+
 def combinefiles(times):
     dir = ''.join(['mdict', path.sep])
     mdg = fullpath(dir, 'digest')
     if path.exists(mdg):
         return
-    filelist = ['vocabulary.txt', 'vocabulary_Linguistics.txt',
-        'vocabulary_Learners.txt']
+    filelist = ['vocabulary.txt', 'vocabulary_Basic.txt', 'vocabulary_Lite.txt']
     mfile = [fullpath(dir, f) for f in filelist]
     fw = [open(f, 'w') for f in mfile]
     picdir = fullpath(dir, 'p')
@@ -385,14 +382,21 @@ def combinefiles(times):
     href = re.compile(r'href=(?!["\'](?:entry|http|www.|javascript|\w+.css))[^>]+>', re.I)
     logs = []
     rep = removedupl(''.join([dir, 'p']))
+    od = OrderedDict()
+    prf, prr = -1, 0
+    for w in ordered:
+        if prf != w[1].ffreq:
+            prr = len(od)+1
+        od[w[0]] = prr
+        prf = w[1].ffreq
     try:
         for idx in xrange(1, times+2):
             subdir = ''.join([dir, '%d'%idx, path.sep])
             cnt = len(getwordlist(''.join([subdir, 'wordlist.txt'])))
             fn = [''.join([subdir, f]) for f in filelist]
             mdata = [addrefs(ddg, convrefs(ddg, readdata(fn[i]).strip(), i), i) for i in xrange(0, 3)]
-            for i in [0, 2]:
-                mdata[i] = replacepic(mdata[i], rep)
+            for i in xrange(0, 3):
+                mdata[i] = addrank(replacepic(mdata[i], rep), od)
             warning = []
             if mdata[0].count('\n')+1 != cnt*3:
                 warning.append('WARNING: Entries of file %s is not equal to its wordlist\'s' % fn[0])
@@ -405,7 +409,7 @@ def combinefiles(times):
                 logs.extend(link)
             [fw[i].write(''.join([mdata[i], '\n']) if mdata[i] else '') for i in xrange(0, 3)]
         for k, v in sorted(ldict.iteritems(), key=lambda d: d[0]):
-            [fw[i].write('\n'.join([k, addrefs(ddg, v, i), '</>\n'])) for i in [0, 2]]
+            [fw[i].write('\n'.join([k, addrefs(ddg, v, i), '</>\n'])) for i in xrange(0, 3)]
     finally:
         [fw[i].close() for i in xrange(0, 3)]
     if logs:
