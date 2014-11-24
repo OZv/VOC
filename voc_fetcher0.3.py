@@ -26,6 +26,7 @@ import urllib
 import fileinput
 from os import path
 from datetime import datetime
+from collections import OrderedDict
 from multiprocessing import Manager
 from urllib3 import PoolManager
 from bs4 import SoupStrainer
@@ -34,7 +35,7 @@ from bs4 import BeautifulSoup
 
 ENTLINK = '<a href="entry://%s">%s</a>'
 styled = {'v': '#539007', 'n': '#e3412f', 'j': '#f8b002', 'd': '#684b9d'}
-http = PoolManager()
+http = PoolManager(timeout=60)
 dict = {}
 style = {}
 base_dir = ''
@@ -42,14 +43,7 @@ base_dir = ''
 
 def addref(word, type, clean=False):
     if word in dict:
-        if type == 1:
-            if dict[word].hasType:
-                html = ENTLINK % (word, word)
-            elif clean:
-                html = word
-            else:
-                html = ''.join(['<a>', word, '</a>'])
-        elif type == 2:
+        if type == 2:
             if dict[word].hasblurb:
                 html = ENTLINK % (word, word)
             elif clean:
@@ -113,102 +107,37 @@ class Definition:
             example = ps.sub(r'\1b', example)
             self.__examples.append(example)
         dll = content.find_all('dl', {'class': 'instances'})
-        instances = []
+        self.__inst = OrderedDict()
         index = 0
-        pos = -1
-        self.__hascode = [False, False]
+        sdt = ''
         for dl in dll:
-            sdt = dl.find('dt').string
-            if sdt:
-                if pos<0 and sdt.startswith('Type'):
-                    pos = index
+            dt = dl.find('dt').string
+            sdt = dt if dt else sdt
             index += 1
             dds = dl.find_all('dd')
             dx = dl.find('dx')
             if dx:
                 dds.extend(dd_ext[dx.string])
-            sddl = []
-            if dl.dd.a['href'].startswith('javascript:'):
-                sddl.extend(self.__showmore(dl.dd.a, pos))
-                assert dds[1].a['href'].startswith('javascript:')
-                a = self.__addcode(dds[1].a, 'h')
-                sddl.extend([self.__str(a), '<br>'])
-                sddl.extend(self.__transdd(dds[2:]))
-                sddl.append('</div>')
-            else:
-                show = []
-                more = []
-                for dd in dds[::-1]:
-                    if 'class' in dd.attrs:
-                        if dd['class'][0]=='more':
-                            more.append(dd)
-                            dds.remove(dd)
-                    else:
-                        show.append(dd)
-                        dds.remove(dd)
-                assert len(more)<2
-                if show:
-                    sddl.extend(self.__transdd(show))
-                if more:
-                    showmore = self.__showmore(more[0].a, pos)
-                    sddl.extend(showmore)
-                    showless = showmore[1].replace('m(', 'h(')
-                    sddl.extend([showless.replace('more', 'less'), '<br>'])
-                    sddl.extend(self.__transdd(dds))
-                    sddl.append('</div>')
-                else:
-                    assert not dds
-            instances.append({sdt: ''.join(sddl)})
-        if pos>0 and pos<len(instances):
-            self.__synonym = instances[:pos]
-            self.__type = instances[pos:]
-        elif pos == 0:
-            self.__synonym = None
-            self.__type = instances
-        else:
-            self.__synonym = instances
-            self.__type = None
-
-    def __str(self, a):
-        del a['href']
-        a['class'] = 'm_'
-        a.name = 'span'
-        return str(a)
-
-    def __showmore(self, a, pos):
-        self.__judgeHascode(pos)
-        a = self.__addcode(a, 'm')
-        return ['<div>', self.__str(a), '</div><div class=v>']
-
-    def __addcode(self, a, func):
-        a['onclick'] = ''.join([func, '(this)'])
-        del a['class']
-        a.string = a.string.replace('types', 'hyponyms')
-        return a
+            sddl = ['<br>']
+            sddl.extend(self.__transdd(dds))
+            if not sdt in self.__inst:
+                self.__inst[sdt] = []
+            self.__inst[sdt].extend(sddl)
 
     def __transdd(self, dds):
         sddl = []
         for dd in dds:
+            for a in dd.find_all('a', href=re.compile('javascript:')):
+                a.decompose()
             al = dd.find_all('a')
             [a.attrs.clear() for a in al]
             divs = dd.find_all('div', {'class': 'definition'})
             for div in divs:
                 div['class'] = 'g'
-            sddl.append(unwraptag(dd))
+            sdd = unwraptag(dd)
+            if sdd:
+                sddl.append(sdd)
         return sddl
-
-    def __judgeHascode(self, pos):
-        if pos >= 0:
-            self.__hascode[1] = True
-        else:
-            self.__hascode[0] = True
-
-    @property
-    def hasType(self):
-        return self.__type
-
-    def hasCode(self, type):
-        return self.__hascode[type]
 
 # start formatting from here
     def htmlstring(self, type, style):
@@ -218,35 +147,39 @@ class Definition:
             style[k] = ''.join(['background-color:', styled[sty]])
         html = self.__prop % ''.join(['p ', sty])
         htmls = [html, ' <span class=t>', self.__meaning, '</span>']
-        if type!=1 and self.__examples:
+        if self.__examples:
             htmls.append('<div class="d n">')
             for example in self.__examples:
                 htmls.append(example)
                 htmls.append('<br>')
             htmls[-1] = '</div>'
-        if type != 1:
-            instances = self.__synonym
-        else:
-            instances = self.__type
-        CAPSTY = '<span onclick="s_(this,%d)"class=y_>%s</span>'
+        CAPSTY = '<span onclick="h(this,%d)"class=y_>%s</span>'
         TXSTY = '<div class=p>%s</div>'
         caps = []
         txts = []
-        if instances:
+        if self.__inst:
             i = 0
-            for instance in instances:
-                caption = instance.keys()[0]
-                if caption:
-                    if caption.startswith('Types'):
-                        caption = 'Hyponyms'
-                    elif caption.startswith('Type of'):
-                        caption = 'Hypernyms'
-                    caps.append(CAPSTY % (i, caption.rstrip(':')))
-                    i += 1
-                if instance.values()[0]:
-                    txts.append(TXSTY % addrefs(instance.values()[0], type))
+            for caption, vl in self.__inst.iteritems():
+                if type==0 and caption.startswith('Synonym'):
+                    caption = 'Syn'
+                elif type==0 and caption.startswith('Antonym'):
+                    caption = 'Ant'
+                elif type==0 and caption.startswith('Example'):
+                    caption = 'Exp'
+                elif caption.startswith('Types'):
+                    if type != 0:
+                        break
+                    caption = 'Hypo'
+                elif caption.startswith('Type of'):
+                    if type != 0:
+                        break
+                    caption = 'Hyper'
+                caps.append(CAPSTY % (i, caption.rstrip(':')))
+                i += 1
+                assert vl
+                txts.append(TXSTY % addrefs(''.join(vl), type))
         if caps:
-            htmls.extend(['<div class="y d">', '<span class="h">|</span>'.join(caps), '</div>'])
+            htmls.extend(['<div class=y>', '<span class="h">|</span>'.join(caps), '</div>'])
         if txts:
             htmls.append('<div>')
             htmls.extend(txts)
@@ -291,9 +224,8 @@ class WordData:
     def __init__(self, word=None, worddef=None, usage=None, filter=None, digest=None):
         if digest:
             self.__hasblurb = digest[0]
-            self.__hasType = digest[1]
-            self.__dumped = digest[2]
-            self.__ffreq = digest[3]
+            self.__dumped = digest[1]
+            self.__ffreq = digest[2]
         else:
             self.__title = None
             self.__prns = []
@@ -305,8 +237,6 @@ class WordData:
             self.__chswdBd = None
             self.__fuldefs = [] # [[]]
             self.__fuldefindex = [] # [[]]
-            self.__hasType = False
-            self.__hascode = [False, False]
             self.__ffreq = -1
             self.__wdfrq = None
             self.__wdfmls = {}
@@ -319,8 +249,7 @@ class WordData:
 
     @property
     def digest(self):
-        return [int(self.__hasblurb), int(self.__hasType), int(self.__dumped),
-            self.__ffreq]
+        return [int(self.__hasblurb), int(self.__dumped), self.__ffreq]
 
     @property
     def title(self):
@@ -329,13 +258,6 @@ class WordData:
     @property
     def hasblurb(self):
         return self.__hasblurb
-
-    def hasCode(self, type):
-        return self.__hascode[type]
-
-    @property
-    def hasType(self):
-        return self.__hasType
 
     @property
     def dumped(self):
@@ -346,15 +268,15 @@ class WordData:
         return self.__ffreq
 
     @property
-    def htmlBasic(self):
+    def html(self):
         return self.__htmlstring(0)
 
     @property
-    def htmlLinguistics(self):
+    def htmlBasic(self):
         return self.__htmlstring(1)
 
     @property
-    def htmlLearners(self):
+    def htmlLite(self):
         return self.__htmlstring(2)
 
     def __pre_process(self, page):
@@ -528,11 +450,6 @@ class WordData:
                     else:
                         del h3.a['name']
                 definition = Definition(define, self.__dd_ext)
-                if not self.__hasType and definition.hasType:
-                    self.__hasType = True
-                for i in xrange(0, 2):
-                    if not self.__hascode[i] and definition.hasCode(i):
-                        self.__hascode[i] = True
                 defl.append(definition)
             propd = sorted(propd.items(), key=lambda d: d[1][1])
             self.__fuldefindex.append(propd)
@@ -676,12 +593,12 @@ class WordData:
             index = 1
             if not lmargin:
                 style['div.c'] = 'margin-left:1.2em'
-            style['div.o'] = 'float:left;overflow:hidden;width:1em;padding-right:4px;text-align:right;'
-            NSTYLE = '<div class="o t">%d</div>'
+            style['span.o'] = 'display:inline-block;padding-top:2px;position:absolute;left:0.3em;width:1.5em;text-align:center'
+            NSTYLE = '<span class=o>%d</span>'
             for define in defl:
+                htmls.append('<div class=c>')
                 htmls.append(NSTYLE % index)
                 index += 1
-                htmls.append('<div class=c>')
                 htmls.extend(define.htmlstring(type, style))
                 htmls.append('</div>')
         return htmls
@@ -696,16 +613,14 @@ class WordData:
         style['div.t'] = 'font-family:\'Lucida Grande\',\'Lucida Sans Unicode\''
         style['div.b'] = 'color:blue;font-weight:bold;font-size:120%'
         style['div.m'] = 'margin-top:0.5em'
-        style['div.v'] = 'display:none'
         MARGIN = '<div class=m></div>'
         acr = randomstr(4)
         htmls = ['<link rel="stylesheet"href="v.css"type="text/css">',
             '<div class="b t"id="v5A"><a id="%s"></a>'%acr, self.__title]
-        if type != 1:
-            style['img.m'] = 'margin-left:0.6em;width:16px;height:16px;cursor:pointer'
-            AUDIO = '<img src="p.png"onclick="l(this,\'%s\')"class=m>'
-            for prn in self.__prns:
-                htmls.append(AUDIO % prn)
+        style['img.m'] = 'margin-left:0.6em;width:16px;height:16px;cursor:pointer'
+        AUDIO = '<img src="p.png"onclick="v(this,\'%s\')"class=m>'
+        for prn in self.__prns:
+            htmls.append(AUDIO % prn)
         htmls.append('</div>')
         style['div.a'] = 'font-family:Helvetica'
         style['div.g'] = 'color:gray'
@@ -713,62 +628,62 @@ class WordData:
         style['div.n'] = 'letter-spacing:0.5px;color:#369'
         FREQ = '<div class="a g d">(%s)</div>'
         htmls.append(FREQ % self.__wdfrq)
-        htmls.append('<br>')
+        htmls.append('<div class=v_>')
+        style['div.v_'] = 'margin-top:1em'
+        style['div.v_ i'] = 'font-family:"georgia","times"'
         style['a.p'] = 'text-decoration:none;padding:0 5px 1px;font-size:70%;font-weight:bold;color:white'
         style['a.o'] = 'text-decoration:none;padding:0 5px 1px;margin-right:3px;font-size:70%;font-weight:bold;color:white'
         htmls.extend(self.__formatdefindex(style))
         style['hr.s'] = 'height:1px;border:none;border-top:1px gray dashed'
         htmls.append('<hr class=s>')
         style['span.b'] = 'font-weight:bold;background-color:gray;color:white'
-        if type != 1:
-            if self.__hasblurb or self.__chswdHd:
-                style['span.s'] = 'color:green'
-                style['div.i'] = 'text-indent:1.2em'
-            if self.__sblurb:
-                style['div.s'] = 'font-size:110%'
-                htmls.append(self.__sblurb)
-            if self.__lblurb:
-                htmls.append(self.__lblurb)
-            style['span.c'] = 'font-family:\'Trebuchet MS\';font-size:80%;padding:0 3px 0 3px;letter-spacing:1px;border-radius:3px'
-            SECHD = '<span class="b c">%s</span><br>'
-            if self.__chswdHd:
-                style['div.l'] = 'color:green;font-weight:bold'
-                style['div.q'] = 'padding:0.3em 2.4em 0.3em'
-                style['div.e'] = 'text-align:center'
-                style['fieldset.a'] = 'font-family:Helvetica;border-radius:3px;border:1px dashed gray'
-                style['span.d'] = 'font-family:Helvetica;font-size:90%;font-weight:bold'
-                style['span.r'] = 'color:gray;font-size:90%'
-                style['p.q'] = 'margin:0.3em 0'
-                style['p.i'] = 'text-indent:1.2em;margin:0.3em 0'
-                htmls.append(MARGIN)
-                htmls.extend(self.__formatsidebar())
-            if self.__wdfmls:
-                style['span.h'] = 'color:gray;font-family:\'Trebuchet MS\';padding:0 0.3em 0 0.3em'
-                style['span.h[onclick]:hover'] = 'text-decoration:underline'
-                style['span.s_, span.y_, span.m_, span.h[onclick]'] = 'cursor:pointer'
-                style['span.s_:after'] = 'content:"...";display:inline-block;margin-left:0.5em;padding:1px;font-size:80%;line-height:70%;font-family:Helvetica;color:#888;outline:1px solid #CCC;white-space:nowrap'
-                style['span.s_:hover:after'] = 'background-color:#EEF'
-                style['span.w_'] = 'display:none'
-                htmls.append(MARGIN)
-                htmls.append(SECHD % 'WORD FAMILY')
-                htmls.append(self.__formatwdfmls(type))
-            if self.__usages:
-                style['div.r'] = 'font-size:80%'
-                htmls.append(MARGIN)
-                htmls.append(SECHD % 'USAGE EXAMPLES')
-                if self.__filter != '0':
-                    htmls.extend(['<input type="hidden"value="',
-                        self.__filter, '">'])
-                htmls.append('<div id="vUi"class=a><div>')
-                for usage in self.__usages:
-                    htmls.append(usage.htmlstring)
-                htmls.append('</div></div>')
+        if self.__hasblurb or self.__chswdHd:
+            style['span.s'] = 'color:green'
+            style['div.i'] = 'text-indent:1.2em'
+        if self.__sblurb:
+            style['div.s'] = 'font-size:110%'
+            htmls.append(self.__sblurb)
+        if self.__lblurb:
+            htmls.append(self.__lblurb)
+        style['span.c'] = 'font-family:\'Trebuchet MS\';font-size:80%;padding:0 3px 0 3px;letter-spacing:1px;border-radius:3px'
+        SECHD = '<span class="b c">%s</span><br>'
+        if self.__chswdHd:
+            style['div.l'] = 'color:green;font-weight:bold'
+            style['div.q'] = 'padding:0.3em 2.4em 0.3em'
+            style['div.e'] = 'text-align:center'
+            style['fieldset.a'] = 'font-family:Helvetica;border-radius:3px;border:1px dashed gray'
+            style['span.d'] = 'font-family:Helvetica;font-size:90%;font-weight:bold'
+            style['span.r'] = 'color:gray;font-size:90%'
+            style['p.q'] = 'margin:0.3em 0'
+            style['p.i'] = 'text-indent:1.2em;margin:0.3em 0'
+            htmls.append(MARGIN)
+            htmls.extend(self.__formatsidebar())
+        if self.__wdfmls:
+            style['span.h'] = 'color:gray;font-family:\'Trebuchet MS\';padding:0 0.3em 0 0.3em'
+            style['span.h[onclick]:hover'] = 'text-decoration:underline'
+            style['span.s_, span.y_, span.m_, span.h[onclick]'] = 'cursor:pointer'
+            style['span.s_:after'] = 'content:"...";display:inline-block;margin-left:0.5em;padding:1px;font-size:80%;line-height:70%;font-family:Helvetica;color:#888;outline:1px solid #CCC;white-space:nowrap'
+            style['span.s_:hover:after'] = 'background-color:#EEF'
+            style['span.w_'] = 'display:none'
+            htmls.append(MARGIN)
+            htmls.append(SECHD % 'WORD FAMILY')
+            htmls.append(self.__formatwdfmls(type))
+        if self.__usages:
+            style['div.r'] = 'font-size:80%'
+            htmls.append(MARGIN)
+            htmls.append(SECHD % 'USAGE EXAMPLES')
+            if self.__filter != '0':
+                htmls.extend(['<input type="hidden"value="',
+                    self.__filter, '">'])
+            htmls.append('<div id="vUi"class=a><div>')
+            for usage in self.__usages:
+                htmls.append(usage.htmlstring)
+            htmls.append('</div></div>')
         htmls.append('<div class="a m">')
         style['span.t'] = 'font-family:\'Lucida Grande\',\'Lucida Sans Unicode\''
-        style['div.y'] = 'font-family:Helvetica;color:#287;font-weight:bold'
+        style['div.y'] = 'font-family:Helvetica;color:#398;font-size:85%;text-transform:uppercase'
         style['div.p'] = 'padding-left:1em;display:none'
         style['span.y_:hover'] = 'text-decoration:underline'
-        style['span.m_'] = 'color:blue;text-decoration:underline'
         if len(self.__fuldefs) == 1:
             htmls.extend(self.__formatfulldef(self.__fuldefs[0], type, style, False))
         else:
@@ -780,15 +695,8 @@ class WordData:
                 htmls.append(GRP % index)
                 index += 1
                 htmls.extend(self.__formatfulldef(fuldef, type, style))
-        htmls.append('</div>')
-        if type == 1:
-            htmls.append('<script>document.write(\'<script>function s_(c,n){with(c.parentNode.nextSibling)for(var i=0;i<childNodes.length;i++)with(childNodes[i].style)if(i==n){if(display=="block")display="none";else display="block";}else display="none";}')
-            if self.__hascode[1]:
-                htmls.append('function m(c){with(c.parentNode){style.display="none";nextSibling.style.display="block";}}function h(c){with(c.parentNode){previousSibling.style.display="block";style.display="none";}}')
-            htmls.append('<\/script>\');</script>')
-        else:
-            htmls.extend(['<script src="j.js"type="text/javascript"></script><script>if(typeof(Z)=="undefined"){var _l=document.getElementsByTagName("link");var _r=/v.css$/;for(var i=_l.length-1;i>=0;i--)with(_l[i].href){var _m=match(_r);if(_m&&_l[i].nextSibling.id=="v5A")',
-                '{document.write(\'<script src="\'+replace(_r,"j.js")+\'"type="text/javascript"><\/script>\');break;}}}</script>'])
+        htmls.extend(['</div><script src="j.js"type="text/javascript"></script><script>if(typeof(Z)=="undefined"){var l=document.getElementsByTagName("link");var r=/v.css$/;for(var i=l.length-1;i>=0;i--)with(l[i].href){var m=match(r);if(m&&l[i].nextSibling.id=="v5A")',
+            '{document.write(\'<script src="\'+replace(r,"j.js")+\'"type="text/javascript"><\/script>\');break;}}}</script></div>'])
         self.__dumped = True
         style['a.q'] = 'text-decoration:none;cursor:default'
         style['a.t'] = 'text-decoration:none'
@@ -837,12 +745,10 @@ def removefile(file):
 
 
 def cleansp(html):
-    p = re.compile(r'\s+')
+    p = re.compile(r'[\r\n    ]+|\s{2,}')
     html = p.sub(' ', html)
-    p = re.compile(r'\s*(<(?:/div|br/?|/p)>)\s*')
-    html = p.sub(r'\1', html)
-    p = re.compile(r'\s*(<(?:div|p)[^>]*>)\s*')
-    html = p.sub(r'\1', html)
+    p = re.compile(r'((?:\s|<br/?>)*)(<(?:/?(?:div|p)[^>]*|br/?)>)(?:\s|<br/?>)*', re.I)
+    html = p.sub(r'\2', html)
     return html
 
 
@@ -889,7 +795,11 @@ def fetchdata(word):
     filter = None
     if page:
         filter = getfilter(page)
-        exm = getdata(word, filter)
+        try:
+            exm = getdata(word, filter)
+        except Exception:
+            page = None
+            print "%s failed." % word
     return page, exm, filter
 
 
@@ -1023,38 +933,36 @@ def makeentry(key, content):
 def dumpwords(mdict, sfx='', finished=True):
     if mdict:
         dict.update(mdict)
-        filelist = ['vocabulary_Learners.txt', 'vocabulary.txt',
-            'vocabulary_Linguistics.txt']
+        filelist = ['vocabulary_lite.txt', 'vocabulary_basic.txt', 'vocabulary.txt']
         f = [fullpath(fn, sfx) for fn in filelist]
         mod = 'a' if sfx else 'w'
-        fw = [open(f[i], mod) for i in xrange(0, 3)]
+        fw = [open(f[i], mod) for i in xrange(0, len(f))]
         try:
             for word, entry in sorted(mdict.iteritems(), key=lambda d: d[0]):
                 if not entry.dumped:
                     if entry.hasblurb:
-                        fw[0].write(makeentry(word, entry.htmlLearners))
+                        fw[0].write(makeentry(word, entry.htmlLite))
                     fw[1].write(makeentry(word, entry.htmlBasic))
-                    if entry.hasType:
-                        fw[2].write(makeentry(word, entry.htmlLinguistics))
+                    fw[2].write(makeentry(word, entry.html))
             dumpstyle()
             digest = json.dumps(mdict, cls=DjEncoder, separators=(',', ':'))
             dump(digest, 'digest')
         finally:
             mdict.clear()
-            [fw[i].close() for i in xrange(0, 3)]
+            [fw[i].close() for i in xrange(0, len(f))]
     if sfx and finished:
-        fixrefs([(f[0], 2), (f[1], 0), (f[2], 1)])
+        fixrefs([(f[0], 2), (f[1], 1), (f[2], 0)])
         l = -len(sfx)
         cmd = '\1'
-        nf = [f[i][:l] for i in xrange(0, 3)]
-        if path.exists(nf[0]) or path.exists(nf[1]) or path.exists(nf[2]):
+        nf = [f[i][:l] for i in xrange(0, len(f))]
+        if path.exists(nf[0]) or path.exists(nf[1]):
             msg = "Found voc*.txt in the same dir, delete?(default=y/n)"
             cmd = raw_input(msg)
         if cmd == 'n':
             return
         elif cmd != '\1':
-            [removefile(nf[i]) for i in xrange(0, 3)]
-        [os.rename(f[i], nf[i]) for i in xrange(0, 3)]
+            [removefile(nf[i]) for i in xrange(0, len(nf))]
+        [os.rename(f[i], nf[i]) for i in xrange(0, len(f))]
 
 
 def fetchdata_and_make_mdx(mdict, inputfile, suffix=''):
