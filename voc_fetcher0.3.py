@@ -108,12 +108,10 @@ class Definition:
             self.__examples.append(example)
         dll = content.find_all('dl', {'class': 'instances'})
         self.__inst = OrderedDict()
-        index = 0
         sdt = ''
         for dl in dll:
             dt = dl.find('dt').string
             sdt = dt if dt else sdt
-            index += 1
             dds = dl.find_all('dd')
             dx = dl.find('dx')
             if dx:
@@ -196,8 +194,12 @@ class Example:
         id = vol['corpus']['id']
         date = 'datePublished' if 'datePublished' in vol else 'dateAdded'
         if id=='LIT' or id=='GUT':
-            self.__corpusname = ''.join([vol['author'], ', <i>',
-                vol['title'], '</i>'])
+            title = vol['title']
+            if len(title) > 35:
+                title = ''.join(['<i title="', title.replace('"', '&quot;'), '">', title[:35], '</i>...'])
+            else:
+                title = ''.join(['<i>', title, '</i>'])
+            self.__corpusname = ''.join([vol['author'], ', ', title])
             self.__date = vol[date][:4]
         else:
             self.__corpusname = vol['corpus']['name']
@@ -573,7 +575,7 @@ class WordData:
         if not htmls:
             raise AssertionError('%s'%self.__title)
         if hide:
-            html = ''.join([''.join(htmls), '<span  onclick="e_(this)"class=s_></span><span class=w_>', ''.join(hide), '</span>'])
+            html = ''.join([''.join(htmls), '<span  onclick="e_(this)"class=s_>+</span><span class=w_>', ''.join(hide), '</span>'])
             p =re.compile(r'(?<=<span class=w_>)\|')
             html = p.sub(r'<span onclick="t_(this)"class=h>/</span>', html)
         else:
@@ -592,8 +594,8 @@ class WordData:
         else:
             index = 1
             if not lmargin:
-                style['div.c'] = 'margin-left:1.2em'
-            style['span.o'] = 'display:inline-block;padding-top:2px;position:absolute;left:0.3em;width:1.5em;text-align:center'
+                style['div.c'] = 'margin-left:1.2em;position:relative'
+            style['span.o'] = 'display:inline-block;padding-top:2px;position:absolute;left:-1.1em'
             NSTYLE = '<span class=o>%d</span>'
             for define in defl:
                 htmls.append('<div class=c>')
@@ -612,7 +614,7 @@ class WordData:
     def __htmlstring(self, type):
         style['div.t'] = 'font-family:\'Lucida Grande\',\'Lucida Sans Unicode\''
         style['div.b'] = 'color:blue;font-weight:bold;font-size:120%'
-        style['div.m'] = 'margin-top:0.5em'
+        style['div.m'] = 'padding-top:0.5em'
         MARGIN = '<div class=m></div>'
         acr = randomstr(4)
         htmls = ['<link rel="stylesheet"href="v.css"type="text/css">',
@@ -662,8 +664,8 @@ class WordData:
             style['span.h'] = 'color:gray;font-family:\'Trebuchet MS\';padding:0 0.3em 0 0.3em'
             style['span.h[onclick]:hover'] = 'text-decoration:underline'
             style['span.s_, span.y_, span.m_, span.h[onclick]'] = 'cursor:pointer'
-            style['span.s_:after'] = 'content:"...";display:inline-block;margin-left:0.5em;padding:1px;font-size:80%;line-height:70%;font-family:Helvetica;color:#888;outline:1px solid #CCC;white-space:nowrap'
-            style['span.s_:hover:after'] = 'background-color:#EEF'
+            style['span.s_'] = 'display:inline-block;margin-left:0.5em;padding:1px;font-size:80%;line-height:70%;font-family:Helvetica;color:#999;border:1px solid #CCC;white-space:nowrap;-webkit-user-select:none;-ms-user-select:none'
+            style['span.s_:hover'] = 'background-color:#EEF'
             style['span.w_'] = 'display:none'
             htmls.append(MARGIN)
             htmls.append(SECHD % 'WORD FAMILY')
@@ -688,7 +690,7 @@ class WordData:
             htmls.extend(self.__formatfulldef(self.__fuldefs[0], type, style, False))
         else:
             index = 1
-            style['div.c'] = 'margin-left:1.2em'
+            style['div.c'] = 'margin-left:1.2em;position:relative'
             style['span.g'] = 'padding:0 5px 1px;font-family:Helvetica'
             GRP = '<span class="b g">%d</span><br>'
             for fuldef in self.__fuldefs:
@@ -706,6 +708,7 @@ class WordData:
         style['span.k'] = 'margin:0.3em 1em 0.2em 0;padding-left:0.3em;width:8.5em;color:gray;cursor:pointer'
         style['span.q'] ='margin:0.3em 0 0.2em 0;width:8.8em;text-align:center'
         style['span.f'] ='display:block;text-overflow:ellipsis;overflow:hidden'
+        style['span.f:hover'] = 'color:#369'
         html = self.__fixanchor(cleansp(''.join(htmls)))
         return html.replace('#_anchor_', ''.join(['#', acr]))
 
@@ -745,7 +748,7 @@ def removefile(file):
 
 
 def cleansp(html):
-    p = re.compile(r'[\r\n    ]+|\s{2,}')
+    p = re.compile(r'[\r\n\t]+|\s{2,}')
     html = p.sub(' ', html)
     p = re.compile(r'((?:\s|<br/?>)*)(<(?:/?(?:div|p)[^>]*|br/?)>)(?:\s|<br/?>)*', re.I)
     html = p.sub(r'\2', html)
