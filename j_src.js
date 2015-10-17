@@ -12,7 +12,6 @@
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU General Public License for more details.
-x=null;
 Z=null;
 M=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 D=[null,"F","A","N","B","S","M","T"];
@@ -41,11 +40,9 @@ with(childNodes[i].style)
 	}else display="none";
 }
 }
-function g(c,w){
-R(c);
-x.onload=function(){
-if(x.readyState==4&&x.status==200&&x.responseText){
-var h=r_(x.responseText);
+function j_(c,w,o){
+if(o){
+var h=r_(o);
 if(h){
 with(c.parentNode.nextSibling){
 	innerHTML=h;
@@ -56,18 +53,22 @@ w[2]+=1;
 w[1]+=5;
 }
 }
-};
+}
+function g(c,w){
+R(c);
 var f='';
-with(c.parentNode.parentNode.previousSibling){
-if(nodeName=='INPUT')
+var p=c.parentNode;
+with(p.parentNode.previousSibling){
+if(nodeName=="INPUT")
 	f="&filter="+value;
 }
-var d=w[3]?'&domain='+w[3]:'';
-var u="http://corpus.vocabulary.com/api/1.0/examples.json?query="+w[5]+"&maxResults=5&startOffset="+w[1]+d+f;
-if(x instanceof XMLHttpRequest)
-x.open("GET",u,true);
-else x.open("GET",u);
-x.send();
+var d=w[3]?"&domain="+w[3]:"";
+var s=document.createElement("script");
+var j="j"+Math.floor(Math.random()*1000000);
+eval(j+"=function(o){j_(c,w,o);p.removeChild(s);}");
+var u="http://corpus.vocabulary.com/api/1.0/examples.json?jsonp="+j+"&query="+w[5]+"&maxResults=5&startOffset="+w[1]+d+f;
+s.setAttribute("src",u);
+p.appendChild(s);
 }
 function n(c,w){
 with(c.parentNode.nextSibling){
@@ -117,8 +118,7 @@ with(c){
 	style.visibility="hidden";
 }
 }
-function r_(s){
-var j=eval("("+s+")");
+function r_(j){
 var h='';
 var a=j.result.sentences;
 for(var i=0;i<a.length;i++){
@@ -130,9 +130,10 @@ with(volume){
 var t=('datePublished'in volume)?datePublished:dateAdded;
 var y=t.substr(0,4);
 var n=corpus.id;
-if(n=='LIT'||n=='GUT')
-n=author+', <i>'+title+'</i>';
-else{
+if(n=='LIT'||n=='GUT'){
+n=title.length>35?' title="'+title.replace(/\"/g,'&quot;')+'">'+title.substr(0,35)+'</i>...':'>'+title+'</i>';
+n=author+', <i'+n;
+}else{
 n=corpus.name;
 if(parseInt(y,10)<=1900){
 t=dateAdded;
@@ -220,7 +221,6 @@ if(parseInt(width,10)>w)
 width=w;
 }
 function k(){
-if(x){
 var l=document.getElementsByTagName('span');
 var m=document.getElementsByTagName('div');
 for(var i=0;i<l.length;i++){
@@ -232,7 +232,6 @@ if(m[i].id=='mIq')
 m[i].style.display="none";
 }
 }
-}
 function d(){
 if(Z)
 return;
@@ -240,15 +239,6 @@ Z=new Array();
 z();
 if(!window.ActiveXObject&&window.addEventListener)
 window.addEventListener("resize",z,false);
-if(window.XMLHttpRequest)
-x=new XMLHttpRequest();
-if(!x||!("withCredentials"in x)){
-if(window.XDomainRequest)
-x=new XDomainRequest();
-else x=null;
-}
-var m=document.getElementsByTagName('img');
-if(x){
 if(window.addEventListener)
 document.addEventListener('click',k,false);
 else document.attachEvent('onclick',k);
@@ -277,6 +267,8 @@ t.push(encodeURI(u[i].innerText));
 }
 for(var i=0;i<Z.length;i++)
 Z[i].push(t[i]);
+var m=document.getElementsByTagName('img');
+if(typeof(document.createElement("audio").play)!="undefined"){
 for(var i=0;i<m.length;i++)
 with(m[i])if(className=="m"){
 var e;
