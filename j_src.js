@@ -111,16 +111,15 @@ if(m[i].id=='mIq')
 m[i].style.display="none";
 }
 }
-function x_(c,g){
+function x_(c){
 var p=c.parentNode;
 var h=p.childNodes[0].offsetHeight;
 var b=p.childNodes[2];
 if(b.offsetHeight>h*6){
-if(!g)c.setAttribute("onclick","v0r.x(this,"+b.offsetHeight+")");
 b.style.height=h*6;
 c.src=c.src.replace(/\w+.png$/,"x.png");
 }else{
-if(g)b.style.height=g;
+b.style.height="auto";
 c.src=c.src.replace(/\w+.png$/,"y.png");
 }
 }
@@ -174,7 +173,7 @@ u=document.getElementsByTagName('fieldset');
 for(var i=0;i<u.length;i++){
 if(u[i].className=="a"){
 d=u[i].childNodes;
-x_(d[d.length-1],0);
+x_(d[d.length-1]);
 }
 }
 var h=document.getElementsByTagName('a');
@@ -199,8 +198,8 @@ var p=c.parentNode;
 p.style.display="none";
 p.previousSibling.style.display="inline-block";
 },
-x:function(c,g){
-x_(c,g);
+x:function(c){
+x_(c);
 },
 h:function(c,n){
 var p=c.parentNode;
