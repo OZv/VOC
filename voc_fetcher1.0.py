@@ -545,7 +545,7 @@ class WordData:
         return ['<fieldset class=a>',
                 '<legend><span class=d>', self.__chswdTt, '</span></legend>',
                 '<div class="l t">', self.__chswdHd, '</div><div class="i_">',
-                self.__chswdBd, '</div><img src="x.png"onclick="v0r.x(this,0)"class=i_></fieldset>']
+                self.__chswdBd, '</div><img src="x.png"onclick="v0r.x(this)"class=i_></fieldset>']
 
     def __hastitleword(self, v):
         for c in v[1]:
