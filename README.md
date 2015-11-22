@@ -10,7 +10,7 @@ http://www.pdawiki.com/forum/thread-12743-1-1.html
 核心词汇表格式化用。(未压缩空白字符的原始代码)
 2. 抓词脚本
 ----------------
-* voc_fetcher0.3.py  
+* voc_fetcher1.0.py  
 为主程序，单线程下载及html->mdx格式转换
 * wrapper.py  
 为外壳程序，支持开多个进程，支持无人值守、循环检测、自动重试、断点续传  
