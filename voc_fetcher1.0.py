@@ -82,8 +82,8 @@ def find_fulldefine(tags, p):
 
 
 def randomstr(digit):
-    return ''.join(random.sample(string.ascii_letters, 1)+
-        random.sample(string.ascii_letters+string.digits, digit-1))
+    return ''.join(random.sample(string.ascii_lowercase, 1)+
+        random.sample(string.ascii_lowercase+string.digits, digit-1))
 
 
 class Definition:
@@ -151,7 +151,7 @@ class Definition:
                 htmls.append(example)
                 htmls.append('<br>')
             htmls[-1] = '</div>'
-        CAPSTY = '<span onclick="h(this,%d)"class=y_>%s</span>'
+        CAPSTY = '<span onclick="v0r.h(this,%d)"class=y_>%s</span>'
         TXSTY = '<div class=p>%s</div>'
         caps = []
         txts = []
@@ -304,10 +304,10 @@ class WordData:
 
     def __getwordtitle(self, h1):
         self.__title = h1.get_text(strip=True)
-        al = h1.find_all('a', onclick=re.compile(r'^ *VCOM.playAudio'))
+        al = h1.find_all('a', class_='audio')
         if al:
             for a in al:
-                self.__prns.append(str(a['name']))
+                self.__prns.append(str(a['data-audio']))
 
     def __transfchswdBd(self, div, link):
         tl = div.find_all(lambda e:
@@ -375,7 +375,7 @@ class WordData:
             ad.name = 'img'
             ad.attrs.clear()
             ad['src'] = 'q.png'
-            ad['onclick'] = ''.join(['L(this,\'', src, '\')'])
+            ad['onclick'] = ''.join(['v0r.l(this,\'', src, '\')'])
         sl = div.find_all('source')
         for source in sl:
             if source.parent.name == 'div':
@@ -487,9 +487,9 @@ class WordData:
 
     def __initdef(self, word, data):
         data = self.__pre_process(data)
-        wpg = SoupStrainer('div', class_='wordPage')
+        wpg = SoupStrainer('div', class_=re.compile('[^<>]*?wordPage[^<>]*?'))
         soup = BeautifulSoup(data, parse_only=wpg)
-        div = soup.find('div', {'class': 'wordPage'})
+        div = soup.find('div', class_=re.compile('[^<>]*?wordPage[^<>]*?'))
         assert div
         self.__getwordtitle(div.h1)
         if word != self.__title:
@@ -500,7 +500,7 @@ class WordData:
             self.__hasblurb = True
             self.__getblurb(div)
         tags = soup.find_all(re.compile(r'div|h2'), class_='sectionHeader')
-        tag = find_fulldefine(tags, re.compile(r'DEFINITIONS OF'))
+        tag = find_fulldefine(tags, re.compile(r'DEFINITIONS OF', re.I))
         if tag:
             self.__getfulldef(tag.parent)
         else:
@@ -544,8 +544,8 @@ class WordData:
     def __formatsidebar(self):
         return ['<fieldset class=a>',
                 '<legend><span class=d>', self.__chswdTt, '</span></legend>',
-                '<div class="l t">', self.__chswdHd, '</div>',
-                self.__chswdBd, '</fieldset>']
+                '<div class="l t">', self.__chswdHd, '</div><div class="i_">',
+                self.__chswdBd, '</div><img src="x.png"onclick="v0r.x(this,0)"class=i_></fieldset>']
 
     def __hastitleword(self, v):
         for c in v[1]:
@@ -575,9 +575,9 @@ class WordData:
         if not htmls:
             raise AssertionError('%s'%self.__title)
         if hide:
-            html = ''.join([''.join(htmls), '<span  onclick="e_(this)"class=s_>+</span><span class=w_>', ''.join(hide), '</span>'])
+            html = ''.join([''.join(htmls), '<span  onclick="v0r.o(this)"class=s_>+</span><span class=w_>', ''.join(hide), '</span>'])
             p =re.compile(r'(?<=<span class=w_>)\|')
-            html = p.sub(r'<span onclick="t_(this)"class=h>/</span>', html)
+            html = p.sub(r'<span onclick="v0r.b(this)"class=h>/</span>', html)
         else:
             html = ''.join(htmls)
         return ''.join(['<div class=a>', html.replace('|', '<span class=h>/</span>'), '</div>'])
@@ -620,7 +620,7 @@ class WordData:
         htmls = ['<link rel="stylesheet"href="v.css"type="text/css">',
             '<div class="b t"id="v5A"><a id="%s"></a>'%acr, self.__title]
         style['img.m'] = 'margin-left:0.6em;width:16px;height:16px;cursor:pointer'
-        AUDIO = '<img src="p.png"onclick="v(this,\'%s\')"class=m>'
+        AUDIO = '<img src="p.png"onclick="v0r.v(this,\'%s\')"class=m>'
         for prn in self.__prns:
             htmls.append(AUDIO % prn)
         htmls.append('</div>')
@@ -658,6 +658,9 @@ class WordData:
             style['span.r'] = 'color:gray;font-size:90%'
             style['p.q'] = 'margin:0.3em 0'
             style['p.i'] = 'text-indent:1.2em;margin:0.3em 0'
+            style['div.i_'] = 'overflow:hidden;transition:height 1.5s'
+            style['img.i_'] = 'width:16px;padding:0 1ex;position:relative;top:1ex;left:50%;margin-left:-1ex;cursor:pointer'
+            style['img.i_:hover'] = 'background-color:#F2F2F2'
             htmls.append(MARGIN)
             htmls.extend(self.__formatsidebar())
         if self.__wdfmls:
@@ -681,24 +684,25 @@ class WordData:
             for usage in self.__usages:
                 htmls.append(usage.htmlstring)
             htmls.append('</div></div>')
-        htmls.append('<div class="a m">')
-        style['span.t'] = 'font-family:\'Lucida Grande\',\'Lucida Sans Unicode\''
-        style['div.y'] = 'font-family:Helvetica;color:#398;font-size:85%;text-transform:uppercase'
-        style['div.p'] = 'padding-left:1em;display:none'
-        style['span.y_:hover'] = 'text-decoration:underline'
-        if len(self.__fuldefs) == 1:
-            htmls.extend(self.__formatfulldef(self.__fuldefs[0], type, style, False))
-        else:
-            index = 1
-            style['div.c'] = 'margin-left:1.2em;position:relative'
-            style['span.g'] = 'padding:0 5px 1px;font-family:Helvetica'
-            GRP = '<span class="b g">%d</span><br>'
-            for fuldef in self.__fuldefs:
-                htmls.append(GRP % index)
-                index += 1
-                htmls.extend(self.__formatfulldef(fuldef, type, style))
-        htmls.extend(['</div><script src="j.js"type="text/javascript"></script><script>if(typeof(Z)=="undefined"){var l=document.getElementsByTagName("link");var r=/v.css$/;for(var i=l.length-1;i>=0;i--)with(l[i].href){var m=match(r);if(m&&l[i].nextSibling.id=="v5A")',
-            '{document.write(\'<script src="\'+replace(r,"j.js")+\'"type="text/javascript"><\/script>\');break;}}}</script></div>'])
+        if type != 2:
+            htmls.append('<div class="a m">')
+            style['span.t'] = 'font-family:\'Lucida Grande\',\'Lucida Sans Unicode\''
+            style['div.y'] = 'font-family:Helvetica;color:#398;font-size:85%;text-transform:uppercase'
+            style['div.p'] = 'padding-left:1em;display:none'
+            style['span.y_:hover'] = 'text-decoration:underline'
+            if len(self.__fuldefs) == 1:
+                htmls.extend(self.__formatfulldef(self.__fuldefs[0], type, style, False))
+            else:
+                index = 1
+                style['div.c'] = 'margin-left:1.2em;position:relative'
+                style['span.g'] = 'padding:0 5px 1px;font-family:Helvetica'
+                GRP = '<span class="b g">%d</span><br>'
+                for fuldef in self.__fuldefs:
+                    htmls.append(GRP % index)
+                    index += 1
+                    htmls.extend(self.__formatfulldef(fuldef, type, style))
+            htmls.append('</div>')
+        htmls.append('<script src="j.js"type="text/javascript"></script></div>')
         self.__dumped = True
         style['a.q'] = 'text-decoration:none;cursor:default'
         style['a.t'] = 'text-decoration:none'
@@ -765,7 +769,7 @@ def getpage(link, BASE_URL = 'http://www.vocabulary.com'):
 
 def getdata(word, filter, domain=None):
     link = ['/api/1.0/examples.json?query=', urllib.quote(word),
-        '&maxResults=5&startOffset=0']
+        '&maxResults=3&startOffset=0']
     if domain:
         link.extend(['&domain=', domain])
     if filter != '0':
