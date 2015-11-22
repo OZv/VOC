@@ -286,7 +286,7 @@ def gen_wordlist(ordered):
     sty = []
     for k, v in sorted(style.iteritems(), key=lambda d: d[0]):
         sty.extend([k, '{', v, '}'])
-    levels = [5]#[2000, 1500, 1500, 1500, 1500, 2000, 2000, 3000, 2000, 3000]
+    levels = [2000, 1500, 1500, 1500, 1500, 2000, 2000, 3000, 2000, 3000]
     ldict = {}
     i = 1
     start = 0
