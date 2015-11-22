@@ -202,7 +202,7 @@ def multiprocess_fetcher(wordlist, STEP, MAX_PROCESS):
             sdir = ''.join(['mdict', path.sep, '%d'%i, path.sep])
             file = fullpath(sdir, 'digest')
             if not os.path.exists(file):
-                arg.append('python -u voc_fetcher0.3.py %s %d' % (sdir, i))
+                arg.append('python -u voc_fetcher1.0.py %s %d' % (sdir, i))
         lenr = len(arg)
         if len(arg) > 0:
             if lenr >= leni:
@@ -240,7 +240,7 @@ def makeentry(title, cnt, ordered):
     txt = []
     i = 0
     for k, vl in cata:
-        idx.append('<span onclick="u(this,%d)"' % i)
+        idx.append('<span onclick="lws.u(this,%d)"' % i)
         if i==0:
             idx.append('style="color:#369;border:1px solid #369;box-shadow:-1px -1px 3px #A9BCF5 inset;background-color:#CEE3F6"')
         idx.extend(['class=x>', k, '</span>'])
@@ -286,7 +286,7 @@ def gen_wordlist(ordered):
     sty = []
     for k, v in sorted(style.iteritems(), key=lambda d: d[0]):
         sty.extend([k, '{', v, '}'])
-    levels = [2000, 1500, 1500, 1500, 1500, 2000, 2000, 3000, 2000, 3000]
+    levels = [5]#[2000, 1500, 1500, 1500, 1500, 2000, 2000, 3000, 2000, 3000]
     ldict = {}
     i = 1
     start = 0
