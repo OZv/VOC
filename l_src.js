@@ -12,28 +12,7 @@
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU General Public License for more details.
-function u(c,n){
-with(c.parentNode){
-	var b=nextSibling;
-	var i=parseInt(b.value);
-	if(i==n)return;
-	b.value=n;
-	with(childNodes[i].style){
-		color="";
-		border="1px solid gray";
-		boxShadow="";
-		backgroundColor="";
-	}
-	b=b.nextSibling.nextSibling;
-	v_(b.childNodes[n],b.nextSibling);
-}
-with(c.style){
-	color="#369";
-	border="1px solid #369";
-	boxShadow="-1px -1px 3px #A9BCF5 inset";
-	backgroundColor="#CEE3F6";
-}
-}
+var lws=(function(){
 function d(w){
 var n=parseInt(w/90)+1;
 return n*90-w;
@@ -85,3 +64,25 @@ window.addEventListener("resize",w,false);
 }
 if(window.addEventListener)window.addEventListener("load",i,false);
 else window.attachEvent("onload",i);
+return{u:function(c,n){
+with(c.parentNode){
+	var b=nextSibling;
+	var i=parseInt(b.value);
+	if(i==n)return;
+	b.value=n;
+	with(childNodes[i].style){
+		color="";
+		border="1px solid gray";
+		boxShadow="";
+		backgroundColor="";
+	}
+	b=b.nextSibling.nextSibling;
+	v_(b.childNodes[n],b.nextSibling);
+}
+with(c.style){
+	color="#369";
+	border="1px solid #369";
+	boxShadow="-1px -1px 3px #A9BCF5 inset";
+	backgroundColor="#CEE3F6";
+}
+}}}());
