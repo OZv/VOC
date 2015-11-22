@@ -37,7 +37,7 @@ https://bitbucket.org/vinay.sajip/pylauncher/downloads/launcher.msi
 下载完后自动合并为单个文本文件（可直接用MdxBuilder压制成mdx词库）；  
 同时生成图片目录p、CSS样式表v.css和l.css，将这些连同上述js脚本放入data目录，  
 便可用MdxBuilder压制成mdd文件。  
-**注：**如果双击voc_fetcher0.3.py，也会开始下载，但只支持一个进程  
+**注：**如果双击voc_fetcher1.0.py，也会开始下载，但只支持一个进程  
 　　有一些错误检测和后期格式处理只在wrapper.py写了，本人懒得再往voc_fetcher0.3.py里加  
 　　因此为了确保最后生成的文件正确，即使只打算开一个进程也推荐双击wrapper.py执行  
 9. voc_fetcher1.0.py文件名不可修改，如果要改，要同时在wrapper.py里改下面一行：  
