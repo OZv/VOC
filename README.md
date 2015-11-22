@@ -5,9 +5,9 @@ http://www.pdawiki.com/forum/thread-12743-1-1.html
 1. 词典内嵌js脚本
 --------------------
 * j_src.js  
-联网发音及例句刷新，自动向词条内注入USAGE导航条，直连vocabulary.com语料库。未压缩空白字符的原始代码
+联网发音及例句刷新，自动向词条内注入USAGE导航条，直连vocabulary.com语料库。(未压缩空白字符的原始代码)
 * l_src.js  
-核心词汇表格式化用。未压缩空白字符的原始代码  
+核心词汇表格式化用。(未压缩空白字符的原始代码)
 2. 抓词脚本
 ----------------
 * voc_fetcher0.3.py  
@@ -40,6 +40,6 @@ https://bitbucket.org/vinay.sajip/pylauncher/downloads/launcher.msi
 **注：**如果双击voc_fetcher0.3.py，也会开始下载，但只支持一个进程  
 　　有一些错误检测和后期格式处理只在wrapper.py写了，本人懒得再往voc_fetcher0.3.py里加  
 　　因此为了确保最后生成的文件正确，即使只打算开一个进程也推荐双击wrapper.py执行  
-9. voc_fetcher0.3.py文件名不可修改，如果要改，要同时在wrapper.py里改下面一行：  
+9. voc_fetcher1.0.py文件名不可修改，如果要改，要同时在wrapper.py里改下面一行：  
       
-            arg.append('python -u voc_fetcher0.3.py %s %d' % (sdir, i))
+            arg.append('python -u voc_fetcher1.0.py %s %d' % (sdir, i))
