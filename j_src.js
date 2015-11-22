@@ -12,43 +12,18 @@
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU General Public License for more details.
+var v0r=(function(){
 Z=null;
-M=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-D=[null,"F","A","N","B","S","M","T"];
-function e_(c){
-c.style.display="none";
-c.nextSibling.style.display="inline";
-}
-function t_(c){
-with(c.parentNode){
-	style.display="none";
-	previousSibling.style.display="inline-block";
-}
-}
-function h(c,n){
-with(c.parentNode){
-for(var i=0;i<childNodes.length;i++)
-	with(childNodes[i].style)
-		textDecoration="";
-with(nextSibling)
-for(var i=0;i<childNodes.length;i++)
-with(childNodes[i].style)
-	if(i==n){
-		if(display=="block")
-			display="none";
-		else{display="block";c.style.textDecoration="underline";}
-	}else display="none";
-}
-}
+var M=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+var D=[null,"F","A","N","B","S","M","T"];
 function j_(c,w,o){
 if(o){
 var h=r_(o);
 if(h){
-with(c.parentNode.nextSibling){
-	innerHTML=h;
-	w[4].push(h);
-}A(c,"n(this,Z"+w[0]+")");
-if(w[4].length>1)A(c.previousSibling.previousSibling,"p(this,Z"+w[0]+")");
+c.parentNode.nextSibling.innerHTML=h;
+w[4].push(h);
+A(c,"v0r.n(this,Z"+w[0]+")");
+if(w[4].length>1)A(c.previousSibling.previousSibling,"v0r.p(this,Z"+w[0]+")");
 w[2]+=1;
 w[1]+=5;
 }
@@ -58,91 +33,38 @@ function g(c,w){
 R(c);
 var f='';
 var p=c.parentNode;
-with(p.parentNode.previousSibling){
-if(nodeName=="INPUT")
-	f="&filter="+value;
-}
+var i=p.parentNode.previousSibling;
+if(i.nodeName=="INPUT")
+	f="&filter="+i.value;
 var d=w[3]?"&domain="+w[3]:"";
 var s=document.createElement("script");
 var j="j"+Math.floor(Math.random()*1000000);
 eval(j+"=function(o){j_(c,w,o);p.removeChild(s);}");
-var u="http://corpus.vocabulary.com/api/1.0/examples.json?jsonp="+j+"&query="+w[5]+"&maxResults=5&startOffset="+w[1]+d+f;
+var u="http://corpus.vocabulary.com/api/1.0/examples.json?jsonp="+j+"&query="+w[5]+"&maxResults=3&startOffset="+w[1]+d+f;
 s.setAttribute("src",u);
 p.appendChild(s);
-}
-function n(c,w){
-with(c.parentNode.nextSibling){
-if(w[2]<w[4].length){
-w[2]+=1;
-innerHTML=w[4][w[2]-1];
-A(c.previousSibling.previousSibling,"p(this,Z"+w[0]+")");
-}else{
-g(c,w);
-}
-}
-}
-function p(c,w){
-with(c.parentNode.nextSibling){
-if(w[2]>1){
-w[2]-=1;
-innerHTML=w[4][w[2]-1];
-A(c.nextSibling.nextSibling,"n(this,Z"+w[0]+")");
-}
-if(w[2]<=1){
-R(c);
-}
-}
-}
-function c(c,v,d,w){
-v=v?v:window.event;
-v.cancelBubble=true;
-w[1]=0;
-w[2]=0;
-w[3]=D[d];
-w[4]=[];
-with(c.parentNode){
-R(nextSibling.childNodes[0]);
-style.display="none";
-with(previousSibling){
-	style.visibility="visible";
-	innerText=c.innerText;
-}
-g(nextSibling.childNodes[2],w);
-}
-}
-function e(c,v){
-v=v?v:window.event;
-v.cancelBubble=true;
-with(c){
-	nextSibling.style.display="block";
-	style.visibility="hidden";
-}
 }
 function r_(j){
 var h='';
 var a=j.result.sentences;
 for(var i=0;i<a.length;i++){
-with(a[i]){
-var f=offsets;
-s=sentence;
+var f=a[i].offsets;
+var s=a[i].sentence;
 s=s.substr(0,f[0])+'<b>'+s.substr(f[0],f[1]-f[0])+'</b>'+s.substr(f[1]);
-with(volume){
-var t=('datePublished'in volume)?datePublished:dateAdded;
+var v=a[i].volume;
+var t=('datePublished'in v)?v.datePublished:v.dateAdded;
 var y=t.substr(0,4);
-var n=corpus.id;
+var n=v.corpus.id;
 if(n=='LIT'||n=='GUT'){
-n=title.length>35?' title="'+title.replace(/\"/g,'&quot;')+'">'+title.substr(0,35)+'</i>...':'>'+title+'</i>';
-n=author+', <i'+n;
+n=v.title.length>35?' title="'+v.title.replace(/\"/g,'&quot;')+'">'+v.title.substr(0,35)+'</i>...':'>'+v.title+'</i>';
+n=v.author+', <i'+n;
 }else{
-n=corpus.name;
+n=v.corpus.name;
 if(parseInt(y,10)<=1900){
-t=dateAdded;
+t=v.dateAdded;
 y=t.substr(0,4);
 }
-with(t)
-	y=M[parseInt(substr(5,2),10)-1]+' '+substr(8,2)+', '+y;
-}
-}
+y=M[parseInt(t.substr(5,2),10)-1]+' '+t.substr(8,2)+', '+y;
 }
 h+='<div class=n>'+s+'</div><div class="g r">'+n+'('+y+')</div>';
 }
@@ -150,75 +72,32 @@ return h;
 }
 function R(c){
 c.removeAttribute("onclick");
-with(c.style){
-	color="gray";
-	cursor="default";
-}
+var s =c.style;
+s.color="gray";
+s.cursor="default";
 }
 function A(c,f){
 c.setAttribute("onclick",f);
-with(c.style){
-	color="";
-	cursor="pointer";
-}
-}
-function v(c,f){
-R(c);
-c.style.outline="1px dotted gray";
-var u="http://s3.amazonaws.com/audio.vocabulary.com/1.0/us/"+f+".mp3";
-var b=function(){c.style.outline="";A(c,"v(this,'"+f+"')");};
-var t=setTimeout(b,2000);
-try{
-with(document.createElement("audio")){
-setAttribute("src",u);
-onloadstart=function(){clearTimeout(t);};
-onended=b;
-play();
-}
-}catch(e){
-c.style.outline="";
-}
+var s =c.style;
+s.color="";
+s.cursor="pointer";
 }
 function W(){
 var w=window.innerWidth||document.documentElement.clientWidth||document.body.clientWidth;
 return parseInt(w*0.8);
-}
-function L(c,u){
-c.style.display="none";
-var w=W();
-try{
-var a=document.createElement("audio");
-with(c.parentNode){
-	if(c.nextSibling)
-	insertBefore(a,c.nextSibling);
-	else appendChild(a);
-}
-with(a){
-setAttribute("src",u);
-setAttribute("controls","true");
-with(style){
-width=50;
-margin="8px 0";
-transition="width 2s";
-setTimeout(function(){width=w<300?w:300;},1000);
-}
-play();
-}
-}catch(e){
-}
 }
 function z(){
 var g=document.getElementsByTagName('img');
 var a=document.getElementsByTagName('audio');
 var w=W();
 for(var i=0;i<g.length;i++)
-with(g[i])
-if(width>w)
-width=w;
-for(var i=0;i<a.length;i++)
-with(a[i].style)
-if(parseInt(width,10)>w)
-width=w;
+if(g[i].width>w)
+g[i].width=w;
+for(var i=0;i<a.length;i++){
+var s=a[i].style;
+if(parseInt(s.width,10)>w)
+s.width=w;
+}
 }
 function k(){
 var l=document.getElementsByTagName('span');
@@ -230,6 +109,30 @@ l[i].style.visibility="visible";
 for(var i=0;i<m.length;i++){
 if(m[i].id=='mIq')
 m[i].style.display="none";
+}
+}
+function x_(c,g){
+var p=c.parentNode;
+var h=p.childNodes[0].offsetHeight;
+var b=p.childNodes[2];
+if(b.offsetHeight>h*6){
+if(!g)c.setAttribute("onclick","v0r.x(this,"+b.offsetHeight+")");
+b.style.height=h*6;
+c.src=c.src.replace(/\w+.png$/,"x.png");
+}else{
+if(g)b.style.height=g;
+c.src=c.src.replace(/\w+.png$/,"y.png");
+}
+}
+function k_(v){
+var e = v || window.event;
+if(e && e.keyCode==17){
+var m=document.getElementsByTagName('img');
+for(var i=0;i<m.length;i++)
+if(m[i].className=="m"){
+m[i].click();
+break;
+}
 }
 }
 function d(){
@@ -245,8 +148,8 @@ else document.attachEvent('onclick',k);
 var s='';
 var a=["All Sources","Fiction","Arts/Culture","News","Business","Sports","Science/Medicine","Technology"];
 for(var i=0;i<a.length;i++)
-	s+='<span onclick="c(this,event,'+i+',Z#)"class=f>'+a[i]+'</span>';
-s='<span id="I9l"onclick="e(this,event)"class="p k">All Sources</span><div id="mIq"class=f>'+s+'</div><span class="p q"><a href="javascript:void(0);"style="color:gray"class=q>&lt;Prev</a><span class=j>|</span><a href="javascript:void(0);"onclick="n(this,Z#)"class=t>Next&gt;</a></span>';
+	s+='<span onclick="v0r.c(this,event,'+i+',Z#)"class=f>'+a[i]+'</span>';
+s='<span id="I9l"onclick="v0r.e(this,event)"class="p k">All Sources</span><div id="mIq"class=f>'+s+'</div><span class="p q"><a href="javascript:void(0);"style="color:gray"class=q>&lt;Prev</a><span class=j>|</span><a href="javascript:void(0);"onclick="v0r.n(this,Z#)"class=t>Next&gt;</a></span>';
 var u=document.getElementsByTagName('div');
 var c=0;
 var t=[];
@@ -267,23 +170,12 @@ t.push(encodeURI(u[i].innerText));
 }
 for(var i=0;i<Z.length;i++)
 Z[i].push(t[i]);
-var m=document.getElementsByTagName('img');
-if(typeof(document.createElement("audio").play)!="undefined"){
-for(var i=0;i<m.length;i++)
-with(m[i])if(className=="m"){
-var e;
-if(document.createEvent){
-e = document.createEvent("HTMLEvents");
-e.initEvent('click',0,1);
-dispatchEvent(e);
-}else if(fireEvent)
-fireEvent('onclick');
-break;
+u=document.getElementsByTagName('fieldset');
+for(var i=0;i<u.length;i++){
+if(u[i].className=="a"){
+d=u[i].childNodes;
+x_(d[d.length-1],0);
 }
-}else{
-for(var i=0;i<m.length;i++)
-if(m[i].onclick)
-m[i].style.display="none";
 }
 var h=document.getElementsByTagName('a');
 for(var i=0;i<h.length;i++)
@@ -291,7 +183,113 @@ if(h[i].onclick)
 h[i].href='javascript:void(0);';
 }
 if(!Z){
-if(window.addEventListener)
+if(window.addEventListener){
 window.addEventListener('load',d,false);
-else window.attachEvent('onload',d);
-};
+document.addEventListener('keydown',k_,false);
+}else{window.attachEvent('onload',d);
+document.attachEvent('onkeydown',k_);
+}};
+return{
+o:function(c){
+c.style.display="none";
+c.nextSibling.style.display="inline";
+},
+b:function(c){
+var p=c.parentNode;
+p.style.display="none";
+p.previousSibling.style.display="inline-block";
+},
+x:function(c,g){
+x_(c,g);
+},
+h:function(c,n){
+var p=c.parentNode;
+for(var i=0;i<p.childNodes.length;i++)
+	p.childNodes[i].style.textDecoration="";
+var b=p.nextSibling;
+for(var i=0;i<b.childNodes.length;i++){
+var s=b.childNodes[i].style;
+	if(i==n){
+		if(s.display=="block")
+			s.display="none";
+		else{s.display="block";c.style.textDecoration="underline";}
+	}else s.display="none";
+}
+},
+l:function(c,u){
+c.style.display="none";
+var w=W();
+try{
+var a=document.createElement("audio");
+var p=c.parentNode;
+if(c.nextSibling)
+p.insertBefore(a,c.nextSibling);
+else p.appendChild(a);
+a.setAttribute("src",u);
+a.setAttribute("controls","true");
+var s=a.style;
+s.width=50;
+s.margin="8px 0";
+s.transition="width 2s";
+setTimeout(function(){s.width=w<300?w:300;},1000);
+a.play();
+}catch(e){
+}
+},
+v:function(c,f){
+R(c);
+c.style.outline="1px dotted gray";
+var u="http://s3.amazonaws.com/audio.vocabulary.com/1.0/us/"+f+".mp3";
+var b=function(){c.style.outline="";A(c,"v0r.v(this,'"+f+"')");};
+var t=setTimeout(b,2000);
+try{
+with(document.createElement("audio")){
+setAttribute("src",u);
+onloadstart=function(){clearTimeout(t);};
+onended=b;
+play();
+}
+}catch(e){
+c.style.outline="";
+}
+},
+n:function(c,w){
+if(w[2]<w[4].length){
+w[2]+=1;
+c.parentNode.nextSibling.innerHTML=w[4][w[2]-1];
+A(c.previousSibling.previousSibling,"v0r.p(this,Z"+w[0]+")");
+}else{
+g(c,w);
+}
+},
+p:function(c,w){
+if(w[2]>1){
+w[2]-=1;
+c.parentNode.nextSibling.innerHTML=w[4][w[2]-1];
+A(c.nextSibling.nextSibling,"v0r.n(this,Z"+w[0]+")");
+}
+if(w[2]<=1){
+R(c);
+}
+},
+c:function(c,v,d,w){
+v=v?v:window.event;
+v.cancelBubble=true;
+w[1]=0;
+w[2]=0;
+w[3]=D[d];
+w[4]=[];
+var n=c.parentNode;
+R(n.nextSibling.childNodes[0]);
+n.style.display="none";
+var p=n.previousSibling;
+p.style.visibility="visible";
+p.innerText=c.innerText;
+g(n.nextSibling.childNodes[2],w);
+},
+e:function(c,v){
+v=v?v:window.event;
+v.cancelBubble=true;
+c.nextSibling.style.display="block";
+c.style.visibility="hidden";
+}}}());
