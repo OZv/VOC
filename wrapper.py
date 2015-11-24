@@ -19,41 +19,12 @@
 ## GNU General Public License for more details.
 import os
 import re
-import time
 import json
 import shutil
-import urllib2
 import hashlib
 from os import path
 from multiprocessing import Pool
 from collections import OrderedDict
-
-
-def valid_proxylist(file):
-# input file format samaple: 192.192.192.192\t8080\thttp(s)\n
-# output file format: http(s)://192.192.192.192:8080\thttp(s)\n
-    lines = readdata(file)
-    p = re.compile(r'\s*\n\s*')
-    lines = p.sub('\n', lines).strip()
-    lines = lines.split('\n')
-    if lines:
-        proxy = {}
-        for line in lines:
-            adr = line.split('\t')
-            url = '%s:%s' % (adr[0], adr[1])
-            proxy[url] = adr[2].lower()
-        for k in proxy.keys():
-            try:
-                pxy = '%s://%s' % (proxy[k], k)
-                op = urllib2.build_opener(urllib2.ProxyHandler({'http': pxy}))
-                urllib2.install_opener(op)
-                urllib2.urlopen('http://www.vocabulary.com/dictionary/affect',
-                    timeout=2)
-                time.sleep(0.05)
-            except:
-                del proxy[k]
-        pl = [(k+chr(9)+v) for k, v in proxy.iteritems()]
-        dump('\n'.join(pl), 'newproxy.txt')
 
 
 def fullpath(file, suffix=''):
@@ -254,9 +225,7 @@ def makeentry(title, cnt, ordered):
     htmls.extend(idx)
     htmls.append('</div><input type="hidden"value="0"><hr class=s><div>')
     htmls.extend(txt)
-    htmls.append('</div><div id="Z1w"class=t></div>')
-    htmls.extend(['<script src="l.js"type="text/javascript"></script><script>if(typeof(F)=="undefined"){var l=document.getElementsByTagName("link");var r=/l.css$/;for(var i=l.length-1;i>=0;i--)with(l[i].href){var m=match(r);if(m&&l[i].nextSibling.id=="iZw")',
-        '{document.write(\'<script src="\'+replace(r,"l.js")+\'"type="text/javascript"><\/script>\');break;}}}</script>'])
+    htmls.append('</div><div id="Z1w"class=t></div><script src="l.js"type="text/javascript"></script>')
     return ''.join(htmls)
 
 
@@ -331,14 +300,21 @@ def replacepic(html, rep):
     return p.sub(lambda m: subsrc(m.group(0), rep, sp), html)
 
 
+def makesub(rank, g3):
+    if g3.find('once') > -1:
+        return ''.join(['<span title="', rank, '">', g3, r'</span>'])
+    else:
+        return g3
+
+
 def addrank(html, od):
     if html:
         entries = html.strip().split('\n</>\n')
         i = 0
+        p = re.compile(r'(?<=<div class="b t"id="v5A">)(.+?)(</div><div class="a g d">)(\([^<>]+?\))(?=</div>)')
+        q = re.compile(r'</?[^<>]+>')
         for en in entries:
-            k = en[:en.find('\n')]
-            p = re.compile(r'(?<=<div class="a g d">)(\(once[^<>]+?\))(?=</div>)')
-            entries[i] = p.sub(''.join(['<span title="', str(od[k]), '">', r'\1</span>']), en)
+            entries[i] = p.sub(lambda m: ''.join([m.group(1), m.group(2), makesub(str(od[q.sub('', m.group(1))]), m.group(3))]), en)
             i += 1
         return '\n</>\n'.join(entries)
     return html
@@ -365,7 +341,7 @@ def combinefiles(times):
         style.update(json.loads(data))
         sbpdir = fullpath(subdir, 'p')
         if path.exists(sbpdir):
-            [shutil.move(path.sep.join([sbpdir, f]), picdir) for f in os.listdir(sbpdir)]
+            [shutil.copy(path.sep.join([sbpdir, f]), picdir) for f in os.listdir(sbpdir)]
     sty = []
     for k, v in sorted(style.iteritems(), key=lambda d: d[0]):
         sty.extend([k, '{', v, '}'])
@@ -398,8 +374,6 @@ def combinefiles(times):
             for i in xrange(0, 3):
                 mdata[i] = addrank(replacepic(mdata[i], rep), od)
             warning = []
-            if mdata[0].count('\n')+1 != cnt*3:
-                warning.append('WARNING: Entries of file %s is not equal to its wordlist\'s' % fn[0])
             if mdata[0].count('<span class="b c">WORD FAMILY</span>') != cnt:
                 warning.append('WARNING: Some entries of file %s is not completed' % fn[0])
             link = href.findall(mdata[0])
