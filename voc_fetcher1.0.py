@@ -23,20 +23,20 @@ import json
 import string
 import random
 import urllib
+import requests
 import fileinput
 from os import path
 from datetime import datetime
 from collections import OrderedDict
 from multiprocessing import Manager
-from urllib3 import PoolManager
 from bs4 import SoupStrainer
 from bs4 import BeautifulSoup
 
 
 ENTLINK = '<a href="entry://%s">%s</a>'
 styled = {'v': '#539007', 'n': '#e3412f', 'j': '#f8b002', 'd': '#684b9d'}
-http = PoolManager(timeout=60)
-dict = {}
+session = None
+dict = OrderedDict()
 style = {}
 base_dir = ''
 
@@ -359,8 +359,8 @@ class WordData:
                 if len(img['style'].strip()) == 0:
                     del img['style']
             file, ext = path.splitext(img['src'])
-            file = path.sep.join(['p', ''.join([randomstr(3), ext])])
-            url = img['src']
+            file = path.sep.join(['p', ''.join([randomstr(4), ext])])
+            url = urllib.quote(img['src'])
             if url[0] != '/':
                 url = ''.join([link, url])
             dump(getpage(url), file, 'wb')
@@ -617,8 +617,7 @@ class WordData:
         style['div.m'] = 'padding-top:0.5em'
         MARGIN = '<div class=m></div>'
         acr = randomstr(4)
-        htmls = ['<link rel="stylesheet"href="v.css"type="text/css">',
-            '<div class="b t"id="v5A"><a id="%s"></a>'%acr, self.__title]
+        htmls = ['<div class="b t"id="v5A"><a id="%s"></a>'%acr, self.__title]
         style['img.m'] = 'margin-left:0.6em;width:16px;height:16px;cursor:pointer'
         AUDIO = '<img src="p.png"onclick="v0r.v(this,\'%s\')"class=m>'
         for prn in self.__prns:
@@ -658,9 +657,10 @@ class WordData:
             style['span.r'] = 'color:gray;font-size:90%'
             style['p.q'] = 'margin:0.3em 0'
             style['p.i'] = 'text-indent:1.2em;margin:0.3em 0'
-            style['div.i_'] = 'overflow:hidden;transition:height 1.5s'
-            style['img.i_'] = 'width:16px;padding:0 1ex;position:relative;top:1ex;left:50%;margin-left:-1ex;cursor:pointer'
-            style['img.i_:hover'] = 'background-color:#F2F2F2'
+            style['div.i_'] = 'overflow:hidden'
+            style['img.i_, img.j_'] = 'width:16px;padding:0 1ex;position:relative;top:1ex;left:50%;margin-left:-1ex;cursor:pointer'
+            style['img.i_:hover, img.j_:hover'] = 'background-color:#F2F2F2'
+            style['img.j_'] = 'transform:scaleY(-1);-webkit-transform:scaleY(-1);filter:FlipV'
             htmls.append(MARGIN)
             htmls.extend(self.__formatsidebar())
         if self.__wdfmls:
@@ -702,11 +702,12 @@ class WordData:
                     index += 1
                     htmls.extend(self.__formatfulldef(fuldef, type, style))
             htmls.append('</div>')
-        htmls.append('<script src="j.js"type="text/javascript"></script></div>')
+        htmls.append('</div>')
         self.__dumped = True
         style['a.q'] = 'text-decoration:none;cursor:default'
         style['a.t'] = 'text-decoration:none'
         style['div.f'] = 'display:none;float:left;position:absolute;margin:-1.4em 0 0 -0.05em;padding-left:0.3em;width:8.5em;border:1px solid gray;border-radius:6px;box-shadow:1.5px 1.5px 3px #D9D9D9;background-color:#F2F2F2;color:gray;letter-spacing:1px;line-height:140%;font-family:Helvetica;font-size:85%;white-space:nowrap;cursor:pointer'
+        style['div.m_'] = 'margin-top:1em'
         style['span.j'] = 'padding:0.8em;color:gray'
         style['span.p'] = 'display:inline-block;line-height:110%;border:1px solid gray;border-radius:6px;box-shadow:-1px -1px 2px #D9D9D9 inset;background-color:#F2F2F2;letter-spacing:1px;font-family:Helvetica;font-size:85%;text-overflow:ellipsis;overflow:hidden;white-space:nowrap'
         style['span.k'] = 'margin:0.3em 1em 0.2em 0;padding-left:0.3em;width:8.5em;color:gray;cursor:pointer'
@@ -759,10 +760,10 @@ def cleansp(html):
     return html
 
 
-def getpage(link, BASE_URL = 'http://www.vocabulary.com'):
-    r = http.request('GET', ''.join([BASE_URL, link]))
-    if r.status == 200:
-        return r.data
+def getpage(link, BASE_URL = 'http://www.vocabulary.com', time_out=10):
+    r = session.get(''.join([BASE_URL, link]), timeout=time_out)
+    if r.status_code==200:
+        return r.content
     else:
         return None
 
@@ -772,8 +773,7 @@ def getdata(word, filter, domain=None):
         '&maxResults=3&startOffset=0']
     if domain:
         link.extend(['&domain=', domain])
-    if filter != '0':
-        link.extend(['&filter=', filter])
+    link.extend(['&filter=', filter])
     page = getpage(''.join(link), 'http://corpus.vocabulary.com')
     data = None
     if page:
@@ -839,17 +839,20 @@ def getwordlist(file):
 
 def makewords(wordlist, mdict):
     failed = []
-    count = 0
+    count = 1
     for word in wordlist:
-        count += 1
         if count % 100 == 0:
-            print ".",
+            if count % 500 == 0:
+                print count,
+            else:
+                print ".",
         worddef, usages, filter = fetchdata(word)
-        if worddef:
+        if worddef and usages:
             wordentry = WordData(word, worddef, usages, filter)
             if wordentry.title:
                 if not word in mdict or not mdict[word].dumped:
                     mdict[word] = wordentry
+                count += 1
             else:
                 failed.append(word)
         else:
@@ -934,23 +937,37 @@ def dumpstyle():
 
 
 def makeentry(key, content):
-    return '\n'.join([key, content, '</>\n'])
+    return '\n'.join([key, ''.join(['<link rel="stylesheet"href="v.css"type="text/css">',
+    content, '<script src="j.js"type="text/javascript"></script>']), '</>\n'])
+
+
+def add_to_buf(buf, word, entry):
+    key = word.lower()
+    if key in buf:
+        buf[key].append((word, entry))
+    else:
+        buf[key] = [(word, entry)]
 
 
 def dumpwords(mdict, sfx='', finished=True):
     if mdict:
         dict.update(mdict)
+        buf = [OrderedDict(), OrderedDict(), OrderedDict()]
+        for word, entry in mdict.iteritems():
+            if not entry.dumped:
+                if entry.hasblurb:
+                    add_to_buf(buf[0], word, entry.htmlLite)
+                add_to_buf(buf[1], word, entry.htmlBasic)
+                add_to_buf(buf[2], word, entry.html)
         filelist = ['vocabulary_lite.txt', 'vocabulary_basic.txt', 'vocabulary.txt']
         f = [fullpath(fn, sfx) for fn in filelist]
         mod = 'a' if sfx else 'w'
         fw = [open(f[i], mod) for i in xrange(0, len(f))]
         try:
-            for word, entry in sorted(mdict.iteritems(), key=lambda d: d[0]):
-                if not entry.dumped:
-                    if entry.hasblurb:
-                        fw[0].write(makeentry(word, entry.htmlLite))
-                    fw[1].write(makeentry(word, entry.htmlBasic))
-                    fw[2].write(makeentry(word, entry.html))
+            for i in xrange(0, 3):
+                for k, v in buf[i].iteritems():
+                    v = sorted(v, key=lambda d: d[0], reverse=True)
+                    fw[i].write(makeentry(v[0][0], '<div class="m_"></div>'.join([e for w, e in v])))
             dumpstyle()
             digest = json.dumps(mdict, cls=DjEncoder, separators=(',', ':'))
             dump(digest, 'digest')
@@ -1012,7 +1029,7 @@ def start(dir):
         fetchdata_and_make_mdx(mdict, 'failed.txt', '.part')
     elif not path.exists(fp1):
         print ("New session started")
-        mdict = {}
+        mdict = OrderedDict()
         fetchdata_and_make_mdx(mdict, 'wordlist.txt')
 
 
@@ -1031,6 +1048,9 @@ if __name__=="__main__":
         no = ' ' + args.index
     else:
         no = ''
+    HEADER = 'Mozilla/5.0 (Windows NT 5.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/45.0.2454.101 Safari/537.36'
+    session = requests.Session()
+    session.headers['User-Agent'] = HEADER
     print "Block%s start at %s" % (no, datetime.now())
     start(args.dir)
     print "Block%s finished at %s" % (no, datetime.now())
