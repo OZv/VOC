@@ -115,6 +115,7 @@ class WordData:
             self.__hasblurb = digest[0]
             self.__dumped = digest[1]
             self.__ffreq = digest[2]
+            self.__filter = digest[3]
 
     @property
     def hasblurb(self):
@@ -130,7 +131,7 @@ class WordData:
 
     @property
     def digest(self):
-        return [int(self.__hasblurb), int(self.__dumped), self.__ffreq]
+        return [int(self.__hasblurb), int(self.__dumped), self.__ffreq, self.__filter]
 
 
 class DjEncoder(json.JSONEncoder):
@@ -148,7 +149,7 @@ def to_worddata(dict):
     return dict
 
 
-def multiprocess_fetcher(wordlist, STEP, MAX_PROCESS):
+def multiprocess_fetcher(wordlist, STEP, MAX_PROCESS, diff=''):
     times = int(len(wordlist)/STEP)
     words = [wordlist[i*STEP: (i+1)*STEP] for i in xrange(0, times)]
     words.append(wordlist[times*STEP:])
@@ -171,9 +172,12 @@ def multiprocess_fetcher(wordlist, STEP, MAX_PROCESS):
         arg = []
         for i in xrange(1, times+2):
             sdir = ''.join(['mdict', path.sep, '%d'%i, path.sep])
-            file = fullpath(sdir, 'digest')
-            if not os.path.exists(file):
-                arg.append('python -u voc_fetcher1.0.py %s %d' % (sdir, i))
+            if diff == 'e':
+                file = fullpath(sdir, 'usages.txt')
+            else:
+                file = fullpath(sdir, 'digest')
+            if not path.exists(file):
+                arg.append('python -u voc_fetcher1.0.py %s %d %s' % (sdir, i, diff))
         lenr = len(arg)
         if len(arg) > 0:
             if lenr >= leni:
@@ -243,13 +247,13 @@ def gen_wordlist(ordered):
     style = {}
     style['a'] = 'text-decoration:none'
     style['div.b'] = 'color:blue;font-weight:bold;font-size:120%'
-    style['div.t'] = 'font-family:\'Lucida Grande\',\'Lucida Sans Unicode\''
+    style['div.t'] = 'font-family:"Lucida Grande","Open Sans","Lucida Sans Unicode"'
     style['div.a'] = 'font-family:Helvetica'
     style['div.g'] = 'color:gray'
     style['div.d'] = 'font-size:90%'
     style['div.v'] = 'display:none'
     style['div.z'] = 'width:30%;height:30%;position:absolute;z-index:-999;visibility:hidden'
-    style['hr.s'] = 'height:1px;border:none;border-top:1px gray dashed'
+    style['hr.s'] = 'height:1px;border:none;border-top:1px gray dashed;margin:2px 0'
     style['span.w'] = 'display:inline-block;white-space:nowrap'
     style['span.x'] = 'display:inline-block;margin:0.2em;width:1em;text-align:center;padding:0.1em 0.2em 0 0.2em;border:1px solid gray;border-radius:5px;box-shadow:-1px -1px 3px #D9D9D9 inset;background-color:#F2F2F2;font-family:Helvetica;font-weight:bold;color:gray;cursor:pointer'
     sty = []
@@ -300,21 +304,32 @@ def replacepic(html, rep):
     return p.sub(lambda m: subsrc(m.group(0), rep, sp), html)
 
 
-def makesub(rank, g3):
+def makesub(m, usg, od, k, r):
+    g3, g4 = m.group(3), m.group(4)
     if g3.find('once') > -1:
-        return ''.join(['<span title="', rank, '">', g3, r'</span>'])
+        g3 = ''.join(['<span title="', str(od[k]), '">', g3, r'</span>'])
+    if k in usg:
+        g4 = r.sub(''.join([r'<div class=m></div><span class="b c">USAGE EXAMPLES</span>\1<div>', usg[k], r'</div>\2']), g4)
     else:
-        return g3
+        g4 = r.sub('', g4)
+    return ''.join([m.group(1), m.group(2), g3, g4])
 
 
-def addrank(html, od):
+def add_rank_usg(html, od, usages):
+    usg = {}
+    for ln in usages:
+        if ln:
+            k, v = ln.strip().split('\n')
+            usg[k] = v
+    assert len(usg)==len(usages)-1
     if html:
         entries = html.strip().split('\n</>\n')
         i = 0
-        p = re.compile(r'(?<=<div class="b t"id="v5A">)(.+?)(</div><div class="a g d">)(\([^<>]+?\))(?=</div>)')
+        p = re.compile(r'(?<=<div class="b t"id="v5A">)(.+?)(</div><div class="a g d">)(\([^<>]+?\))(</div>.+?)(?=<div class="b t"id="v5A">|$|\n)')
         q = re.compile(r'</?[^<>]+>')
+        r = re.compile(r'((?:<input\b[^>]+>)?<div id="vUi"class=a>)(</div>)')
         for en in entries:
-            entries[i] = p.sub(lambda m: ''.join([m.group(1), m.group(2), makesub(str(od[q.sub('', m.group(1))]), m.group(3))]), en)
+            entries[i] = p.sub(lambda m: makesub(m, usg, od, q.sub('', m.group(1)), r), en)
             i += 1
         return '\n</>\n'.join(entries)
     return html
@@ -322,9 +337,6 @@ def addrank(html, od):
 
 def combinefiles(times):
     dir = ''.join(['mdict', path.sep])
-    mdg = fullpath(dir, 'digest')
-    if path.exists(mdg):
-        return
     filelist = ['vocabulary.txt', 'vocabulary_basic.txt', 'vocabulary_lite.txt']
     mfile = [fullpath(dir, f) for f in filelist]
     fw = [open(f, 'w') for f in mfile]
@@ -371,8 +383,9 @@ def combinefiles(times):
             cnt = len(getwordlist(''.join([subdir, 'wordlist.txt'])))
             fn = [''.join([subdir, f]) for f in filelist]
             mdata = [addrefs(ddg, convrefs(ddg, readdata(fn[i]).strip(), i), i) for i in xrange(0, 3)]
+            usages = readdata(''.join([subdir, 'usages.txt'])).strip().split('\n</>')
             for i in xrange(0, 3):
-                mdata[i] = addrank(replacepic(mdata[i], rep), od)
+                mdata[i] = add_rank_usg(replacepic(mdata[i], rep), od, usages)
             warning = []
             if mdata[0].count('<span class="b c">WORD FAMILY</span>') != cnt:
                 warning.append('WARNING: Some entries of file %s is not completed' % fn[0])
@@ -401,7 +414,10 @@ if __name__ == '__main__':
     if len(wordlist):
         times = multiprocess_fetcher(wordlist, STEP, MAX_PROCESS)
         if times >= 0:
-            combinefiles(times)
+            MAX_PROCESS = 1
+            times = multiprocess_fetcher(wordlist, STEP, MAX_PROCESS, 'e')
+            if times >= 0:
+                combinefiles(times)
         print "Done!"
     else:
         print "No word to download, please check wordlist.txt"
