@@ -28,7 +28,6 @@ import fileinput
 from os import path
 from datetime import datetime
 from collections import OrderedDict
-from multiprocessing import Manager
 from bs4 import SoupStrainer
 from bs4 import BeautifulSoup
 
@@ -196,9 +195,11 @@ class Example:
         if id=='LIT' or id=='GUT':
             title = vol['title']
             if len(title) > 35:
-                title = ''.join(['<i title="', title.replace('"', '&quot;'), '">', title[:35], '</i>...'])
+                title = ''.join(['<i title="', title.replace('"', '&quot;'), '">', title[:35].rstrip(' \n\r'), '</i>...'])
             else:
                 title = ''.join(['<i>', title, '</i>'])
+            p = re.compile(r'[\r\n]+')
+            title = p.sub('\xE2\x80\x94', title)
             self.__corpusname = ''.join([vol['author'], ', ', title])
             self.__date = vol[date][:4]
         else:
@@ -223,11 +224,12 @@ class Example:
 
 class WordData:
 # word data structure
-    def __init__(self, word=None, worddef=None, usage=None, filter=None, digest=None):
+    def __init__(self, word=None, worddef=None, filter=None, usage=None, digest=None):
         if digest:
             self.__hasblurb = digest[0]
             self.__dumped = digest[1]
             self.__ffreq = digest[2]
+            self.__filter = digest[3]
         else:
             self.__title = None
             self.__prns = []
@@ -242,16 +244,15 @@ class WordData:
             self.__ffreq = -1
             self.__wdfrq = None
             self.__wdfmls = {}
-            self.__usages = []
             self.__dumped = False
             self.__dd_ext = {}
             self.__filter = filter
-            if self.__initdef(word, worddef):
-                self.__initusage(usage)
+            if worddef and self.__initdef(word, worddef):
+                self.initusage(usage)
 
     @property
     def digest(self):
-        return [int(self.__hasblurb), int(self.__dumped), self.__ffreq]
+        return [int(self.__hasblurb), int(self.__dumped), self.__ffreq, self.__filter]
 
     @property
     def title(self):
@@ -270,6 +271,10 @@ class WordData:
         return self.__ffreq
 
     @property
+    def filter(self):
+        return self.__filter
+
+    @property
     def html(self):
         return self.__htmlstring(0)
 
@@ -280,6 +285,14 @@ class WordData:
     @property
     def htmlLite(self):
         return self.__htmlstring(2)
+
+    @property
+    def usage(self):
+        htmls = []
+        for usage in self.__usages:
+            htmls.append(usage.htmlstring)
+        self.__dumped = True
+        return ''.join(htmls)
 
     def __pre_process(self, page):
     # As BeautifulSoup will cause memory I/O error when the page is too large
@@ -511,9 +524,11 @@ class WordData:
             self.__getwordfamily(div)
         return True
 
-    def __initusage(self, usage):
+    def initusage(self, usage):
         if usage:
             sentences = usage['result']['sentences']
+            self.__usages = []
+            self.__dumped = False
             for sentence in sentences:
                 exp = Example(sentence)
                 self.__usages.append(exp)
@@ -612,7 +627,7 @@ class WordData:
         return html
 
     def __htmlstring(self, type):
-        style['div.t'] = 'font-family:\'Lucida Grande\',\'Lucida Sans Unicode\''
+        style['div.t'] = 'font-family:"Lucida Grande","Open Sans","Lucida Sans Unicode"'
         style['div.b'] = 'color:blue;font-weight:bold;font-size:120%'
         style['div.m'] = 'padding-top:0.5em'
         MARGIN = '<div class=m></div>'
@@ -635,7 +650,7 @@ class WordData:
         style['a.p'] = 'text-decoration:none;padding:0 5px 1px;font-size:70%;font-weight:bold;color:white'
         style['a.o'] = 'text-decoration:none;padding:0 5px 1px;margin-right:3px;font-size:70%;font-weight:bold;color:white'
         htmls.extend(self.__formatdefindex(style))
-        style['hr.s'] = 'height:1px;border:none;border-top:1px gray dashed'
+        style['hr.s'] = 'height:1px;border:none;border-top:1px gray dashed;margin:2px 0'
         htmls.append('<hr class=s>')
         style['span.b'] = 'font-weight:bold;background-color:gray;color:white'
         if self.__hasblurb or self.__chswdHd:
@@ -646,7 +661,7 @@ class WordData:
             htmls.append(self.__sblurb)
         if self.__lblurb:
             htmls.append(self.__lblurb)
-        style['span.c'] = 'font-family:\'Trebuchet MS\';font-size:80%;padding:0 3px 0 3px;letter-spacing:1px;border-radius:3px'
+        style['span.c'] = 'font-family:"Trebuchet MS";font-size:80%;padding:0 3px 0 3px;letter-spacing:1px;border-radius:3px'
         SECHD = '<span class="b c">%s</span><br>'
         if self.__chswdHd:
             style['div.l'] = 'color:green;font-weight:bold'
@@ -664,7 +679,7 @@ class WordData:
             htmls.append(MARGIN)
             htmls.extend(self.__formatsidebar())
         if self.__wdfmls:
-            style['span.h'] = 'color:gray;font-family:\'Trebuchet MS\';padding:0 0.3em 0 0.3em'
+            style['span.h'] = 'color:gray;font-family:"Trebuchet MS";padding:0 0.3em 0 0.3em'
             style['span.h[onclick]:hover'] = 'text-decoration:underline'
             style['span.s_, span.y_, span.m_, span.h[onclick]'] = 'cursor:pointer'
             style['span.s_'] = 'display:inline-block;margin-left:0.5em;padding:1px;font-size:80%;line-height:70%;font-family:Helvetica;color:#999;border:1px solid #CCC;white-space:nowrap;-webkit-user-select:none;-ms-user-select:none'
@@ -673,20 +688,14 @@ class WordData:
             htmls.append(MARGIN)
             htmls.append(SECHD % 'WORD FAMILY')
             htmls.append(self.__formatwdfmls(type))
-        if self.__usages:
-            style['div.r'] = 'font-size:80%'
-            htmls.append(MARGIN)
-            htmls.append(SECHD % 'USAGE EXAMPLES')
-            if self.__filter != '0':
-                htmls.extend(['<input type="hidden"value="',
-                    self.__filter, '">'])
-            htmls.append('<div id="vUi"class=a><div>')
-            for usage in self.__usages:
-                htmls.append(usage.htmlstring)
-            htmls.append('</div></div>')
+        style['div.r'] = 'font-size:80%'
+        if self.__filter != '0':
+            htmls.extend(['<input type="hidden"value="',
+                self.__filter, '">'])
+        htmls.append('<div id="vUi"class=a></div>')
         if type != 2:
             htmls.append('<div class="a m">')
-            style['span.t'] = 'font-family:\'Lucida Grande\',\'Lucida Sans Unicode\''
+            style['span.t'] = 'font-family:"Lucida Grande","Open Sans","Lucida Sans Unicode"'
             style['div.y'] = 'font-family:Helvetica;color:#398;font-size:85%;text-transform:uppercase'
             style['div.p'] = 'padding-left:1em;display:none'
             style['span.y_:hover'] = 'text-decoration:underline'
@@ -706,7 +715,7 @@ class WordData:
         self.__dumped = True
         style['a.q'] = 'text-decoration:none;cursor:default'
         style['a.t'] = 'text-decoration:none'
-        style['div.f'] = 'display:none;float:left;position:absolute;margin:-1.4em 0 0 -0.05em;padding-left:0.3em;width:8.5em;border:1px solid gray;border-radius:6px;box-shadow:1.5px 1.5px 3px #D9D9D9;background-color:#F2F2F2;color:gray;letter-spacing:1px;line-height:140%;font-family:Helvetica;font-size:85%;white-space:nowrap;cursor:pointer'
+        style['div.f'] = 'display:none;float:left;position:absolute;margin:-1.4em 0 0 -0.05em;padding-left:0.3em;width:8.5em;border:1px solid gray;border-radius:6px;box-shadow:1.5px 1.5px 3px #D9D9D9;background-color:#F2F2F2;color:gray;letter-spacing:1px;line-height:140%;font-family:Helvetica;font-size:85%;white-space:nowrap;cursor:pointer;z-index:999'
         style['div.m_'] = 'margin-top:1em'
         style['span.j'] = 'padding:0.8em;color:gray'
         style['span.p'] = 'display:inline-block;line-height:110%;border:1px solid gray;border-radius:6px;box-shadow:-1px -1px 2px #D9D9D9 inset;background-color:#F2F2F2;letter-spacing:1px;font-family:Helvetica;font-size:85%;text-overflow:ellipsis;overflow:hidden;white-space:nowrap'
@@ -802,12 +811,7 @@ def fetchdata(word):
     filter = None
     if page:
         filter = getfilter(page)
-        try:
-            exm = getdata(word, filter)
-        except Exception:
-            page = None
-            print "%s failed." % word
-    return page, exm, filter
+    return page, filter
 
 
 def dummyfetchdata(word):
@@ -846,15 +850,37 @@ def makewords(wordlist, mdict):
                 print count,
             else:
                 print ".",
-        worddef, usages, filter = fetchdata(word)
-        if worddef and usages:
-            wordentry = WordData(word, worddef, usages, filter)
+        worddef, filter = fetchdata(word)
+        if worddef:
+            wordentry = WordData(word, worddef, filter)
             if wordentry.title:
                 if not word in mdict or not mdict[word].dumped:
                     mdict[word] = wordentry
                 count += 1
             else:
                 failed.append(word)
+        else:
+            failed.append(word)
+    return failed
+
+
+def makeusgs(wordlist, mdict):
+    failed = []
+    count = 1
+    for word in wordlist:
+        if count % 100 == 0:
+            if count % 500 == 0:
+                print count,
+            else:
+                print "*",
+        exm = None
+        try:
+            exm = getdata(word, mdict[word].filter)
+        except Exception:
+            print "%s failed." % word
+        if exm:
+            mdict[word].initusage(exm)
+            count += 1
         else:
             failed.append(word)
     return failed
@@ -879,26 +905,18 @@ def info(l, s='word'):
     return '%d %ss' % (l, s) if l>1 else '%d %s' % (l, s)
 
 
-def downloadloop((mdict, failedlist, wordlist)):
+def downloadloop(mdict, wordlist, failedlist, func):
+    l = len(wordlist)
+    print("%s downloading...using 1 thread" % info(l))
     lenr = len(wordlist)
     leni = lenr + 1
     failed = []
     while lenr>0 and lenr<leni:
         leni = lenr
-        failed = makewords(wordlist, mdict)
+        failed = func(wordlist, mdict)
         wordlist = failed
         lenr = len(failed)
     failedlist.extend(failed)
-
-
-def startdownload(wordlist, failedlist, mdict):
-    l = len(wordlist)
-    print("%s downloading...using 1 thread" % info(l))
-    downloadloop((mdict, failedlist, wordlist))
-#    pool.map(downloadloop, [(mdict, failedlist, wl) for wl in wls])
-    if failedlist:
-        msg = "%s failed, retry?(default=y/n)\n" % info(len(failedlist))
-        return raw_input(msg)
     return 'n'
 
 
@@ -975,13 +993,14 @@ def dumpwords(mdict, sfx='', finished=True):
             mdict.clear()
             [fw[i].close() for i in xrange(0, len(f))]
     if sfx and finished:
+        removefile(fullpath('failed.txt'))
         fixrefs([(f[0], 2), (f[1], 1), (f[2], 0)])
         l = -len(sfx)
         cmd = '\1'
         nf = [f[i][:l] for i in xrange(0, len(f))]
         if path.exists(nf[0]) or path.exists(nf[1]):
             msg = "Found voc*.txt in the same dir, delete?(default=y/n)"
-            cmd = raw_input(msg)
+            cmd = 'y'#raw_input(msg)
         if cmd == 'n':
             return
         elif cmd != '\1':
@@ -989,15 +1008,36 @@ def dumpwords(mdict, sfx='', finished=True):
         [os.rename(f[i], nf[i]) for i in xrange(0, len(f))]
 
 
+def dumpusgs(mdict, sfx='', finished=True):
+    f = fullpath('usages.txt', sfx)
+    mod = 'a' if sfx else 'w'
+    fw = open(f, mod)
+    try:
+        for word, entry in mdict.iteritems():
+            if not entry.dumped and entry.usage:
+                fw.write('\n'.join([word, entry.usage, '</>\n']))
+        digest = json.dumps(mdict, cls=DjEncoder, separators=(',', ':'))
+        dump(digest, 'digest')
+    finally:
+        mdict.clear()
+        fw.close()
+    if sfx and finished:
+        removefile(fullpath('failedusg.txt'))
+        l = -len(sfx)
+        nf = f[:l]
+        removefile(nf)
+        os.rename(f, nf)
+
+
 def fetchdata_and_make_mdx(mdict, inputfile, suffix=''):
     wordlist = getwordlist(inputfile)
     l = len(wordlist)
-    failedlist = Manager().list()
+    failedlist = []
     cmd = 'y'
     while not cmd or cmd.lower()=='y':
-        cmd = startdownload(wordlist, failedlist, mdict)
+        cmd = downloadloop(mdict, wordlist, failedlist, makewords)
         wordlist = failedlist
-        failedlist = Manager().list()
+        failedlist = []
     f = len(wordlist)
     print "%s downloaded" % info(l-f),
     if wordlist:
@@ -1009,7 +1049,27 @@ def fetchdata_and_make_mdx(mdict, inputfile, suffix=''):
         dumpwords(mdict, suffix)
 
 
-def start(dir):
+def fetch_usg(mdict, inputfile, suffix=''):
+    wordlist = getwordlist(inputfile)
+    l = len(wordlist)
+    failedlist = []
+    cmd = 'y'
+    while not cmd or cmd.lower()=='y':
+        cmd = downloadloop(mdict, wordlist, failedlist, makeusgs)
+        wordlist = failedlist
+        failedlist = []
+    f = len(wordlist)
+    print "%s downloaded" % info(l-f),
+    if wordlist:
+        dump('\n'.join(wordlist), 'failedusg.txt')
+        print ", %s failed, please look at failedusg.txt." % info(f)
+        dumpusgs(mdict, '.part', False)
+    else:
+        print ", 0 word failed"
+        dumpusgs(mdict, suffix)
+
+
+def start(dir, diff):
     global base_dir
     base_dir = dir
     if base_dir:
@@ -1018,19 +1078,27 @@ def start(dir):
     picdir = fullpath('p')
     if not path.exists(picdir):
         os.mkdir(picdir)
-    else:
-        [os.remove(path.sep.join([picdir, f])) for f in os.listdir(picdir)]
     fp1 = fullpath('digest')
-    fp2 = fullpath('vocabulary.txt.part')
-    fp3 = fullpath('failed.txt')
-    if path.exists(fp1) and path.exists(fp2) and path.exists(fp3):
-        print ("Continue last failed")
-        mdict = json.loads(readdata('digest'), object_hook=to_worddata)
-        fetchdata_and_make_mdx(mdict, 'failed.txt', '.part')
-    elif not path.exists(fp1):
-        print ("New session started")
-        mdict = OrderedDict()
-        fetchdata_and_make_mdx(mdict, 'wordlist.txt')
+    if diff != 'e':
+        fp2 = fullpath('vocabulary.txt.part')
+        fp3 = fullpath('failed.txt')
+        if path.exists(fp1) and path.exists(fp2) and path.exists(fp3):
+            print "Continue last failed"
+            mdict = json.loads(readdata('digest'), object_hook=to_worddata)
+            fetchdata_and_make_mdx(mdict, 'failed.txt', '.part')
+        elif not path.exists(fp1):
+            print "New session started"
+            mdict = OrderedDict()
+            fetchdata_and_make_mdx(mdict, 'wordlist.txt')
+    else:
+        if not path.exists(fullpath('usages.txt')) and path.exists(fp1) and path.exists(fullpath('vocabulary.txt')):
+            mdict = json.loads(readdata('digest'), object_hook=to_worddata)
+            if path.exists(fullpath('usages.txt.part') and fullpath('failedusg.txt')):
+                print "Downloading usages, continue last failed"
+                fetch_usg(mdict, 'failedusg.txt', '.part')
+            else:
+                print "Downloading usages, new session started"
+                fetch_usg(mdict, 'wordlist.txt')
 
 
 if __name__=="__main__":
@@ -1041,6 +1109,7 @@ if __name__=="__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("dir", nargs="?", help="sub dir under cwd")
     parser.add_argument("index", nargs="?", help="block number")
+    parser.add_argument("diff", nargs="?", help="[e] to download usages")
     args = parser.parse_args()
     import socket
     socket.setdefaulttimeout(120)
@@ -1052,6 +1121,6 @@ if __name__=="__main__":
     session = requests.Session()
     session.headers['User-Agent'] = HEADER
     print "Block%s start at %s" % (no, datetime.now())
-    start(args.dir)
+    start(args.dir, args.diff)
     print "Block%s finished at %s" % (no, datetime.now())
     print "\nDone."
