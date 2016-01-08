@@ -533,12 +533,18 @@ class WordData:
                 exp = Example(sentence)
                 self.__usages.append(exp)
 # start formatting from here
-    def __formatdefindex(self, style):
+    def __formatdefindex(self, style, type):
         htmls = []
-        LNK = '<a href="entry://#%s"class="o %s">%s</a>'
+        if type == 2:
+            LNK = '<a class="o %s">%s</a>'
+        else:
+            LNK = '<a href="entry://#%s"class="o %s">%s</a>'
         if len(self.__fuldefindex) == 1:
             for prop, name in self.__fuldefindex[0]:
-                htmls.append(LNK % (name[0], propstyle(prop), prop))
+                if type == 2:
+                    htmls.append(LNK % (propstyle(prop), prop))
+                else:
+                    htmls.append(LNK % (name[0], propstyle(prop), prop))
         else:
             index = 1
             style['span.m'] = 'color:gray;margin-right:5px'
@@ -547,7 +553,10 @@ class WordData:
                 htmls.append(GRP % index)
                 index += 1
                 for prop, name in defidx:
-                    htmls.append(LNK % (name[0], propstyle(prop), prop))
+                    if type == 2:
+                        htmls.append(LNK % (propstyle(prop), prop))
+                    else:
+                        htmls.append(LNK % (name[0], propstyle(prop), prop))
                 htmls.append(' ')
             htmls[-1] = htmls[-1].rstrip()
         if htmls:
@@ -649,9 +658,9 @@ class WordData:
         style['div.v_ i'] = 'font-family:"georgia","times"'
         style['a.p'] = 'text-decoration:none;padding:0 5px 1px;font-size:70%;font-weight:bold;color:white'
         style['a.o'] = 'text-decoration:none;padding:0 5px 1px;margin-right:3px;font-size:70%;font-weight:bold;color:white'
-        htmls.extend(self.__formatdefindex(style))
-        style['hr.s'] = 'height:1px;border:none;border-top:1px gray dashed;margin:2px 0'
+        htmls.extend(self.__formatdefindex(style, type))
         htmls.append('<hr class=s>')
+        style['hr.s'] = 'height:1px;border:none;border-top:1px gray dashed;margin:2px 0'
         style['span.b'] = 'font-weight:bold;background-color:gray;color:white'
         if self.__hasblurb or self.__chswdHd:
             style['span.s'] = 'color:green'
@@ -681,8 +690,7 @@ class WordData:
         if self.__wdfmls:
             style['span.h'] = 'color:gray;font-family:"Trebuchet MS";padding:0 0.3em 0 0.3em'
             style['span.h[onclick]:hover'] = 'text-decoration:underline'
-            style['span.s_, span.y_, span.m_, span.h[onclick]'] = 'cursor:pointer'
-            style['span.s_'] = 'display:inline-block;margin-left:0.5em;padding:1px;font-size:80%;line-height:70%;font-family:Helvetica;color:#999;border:1px solid #CCC;white-space:nowrap;-webkit-user-select:none;-ms-user-select:none'
+            style['span.s_'] = 'display:inline-block;margin-left:0.5em;padding:1px;font-size:80%;line-height:70%;font-family:Helvetica;color:#999;border:1px solid #CCC;white-space:nowrap'
             style['span.s_:hover'] = 'background-color:#EEF'
             style['span.w_'] = 'display:none'
             htmls.append(MARGIN)
@@ -713,16 +721,17 @@ class WordData:
             htmls.append('</div>')
         htmls.append('</div>')
         self.__dumped = True
-        style['a.q'] = 'text-decoration:none;cursor:default'
-        style['a.t'] = 'text-decoration:none'
+        style['span.n, span.s_, span.y_, span.h[onclick]'] = 'cursor:pointer;-webkit-user-select:none;-ms-user-select:none'
+        style['span.e, span.n'] = 'display:inline-block;width:4em'
+        style['span.e'] = 'cursor:default;color:gray;-webkit-user-select:none;-ms-user-select:none'
+        style['span.n'] = 'color:blue'
         style['div.f'] = 'display:none;float:left;position:absolute;margin:-1.4em 0 0 -0.05em;padding-left:0.3em;width:8.5em;border:1px solid gray;border-radius:6px;box-shadow:1.5px 1.5px 3px #D9D9D9;background-color:#F2F2F2;color:gray;letter-spacing:1px;line-height:140%;font-family:Helvetica;font-size:85%;white-space:nowrap;cursor:pointer;z-index:999'
         style['div.m_'] = 'margin-top:1em'
-        style['span.j'] = 'padding:0.8em;color:gray'
         style['span.p'] = 'display:inline-block;line-height:110%;border:1px solid gray;border-radius:6px;box-shadow:-1px -1px 2px #D9D9D9 inset;background-color:#F2F2F2;letter-spacing:1px;font-family:Helvetica;font-size:85%;text-overflow:ellipsis;overflow:hidden;white-space:nowrap'
         style['span.k'] = 'margin:0.3em 1em 0.2em 0;padding-left:0.3em;width:8.5em;color:gray;cursor:pointer'
-        style['span.q'] ='margin:0.3em 0 0.2em 0;width:8.8em;text-align:center'
+        style['span.q'] ='margin:0.3em 0 0.2em 0;width:8.8em'
         style['span.f'] ='display:block;text-overflow:ellipsis;overflow:hidden'
-        style['span.f:hover'] = 'color:#369'
+        style['span.f:hover'] = 'color:blue'
         html = self.__fixanchor(cleansp(''.join(htmls)))
         return html.replace('#_anchor_', ''.join(['#', acr]))
 
