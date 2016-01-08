@@ -103,7 +103,7 @@ def convrefs(ddg, html, type):
     html = p.sub(lambda m: convref(ddg, m, type), html)
     p = re.compile(r'(?<=href=")(/[^"]+")')
     html = p.sub(r'http://www.vocabulary.com\1', html)
-    p = re.compile(r'(<a +href="(?:http://|www.)[^">]+") *(?=>)')
+    p = re.compile(r'(<a +href="(?:http://|www.)[^">]+")[^>]*(?=>)')
     html = p.sub(r'\1target="_blank"', html)
     return html
 
