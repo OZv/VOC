@@ -23,7 +23,7 @@ if(h){
 c.parentNode.nextSibling.innerHTML=h;
 w[4].push(h);
 A(c,"v0r.n(this,Z"+w[0]+")");
-if(w[4].length>1)A(c.previousSibling.previousSibling,"v0r.p(this,Z"+w[0]+")");
+if(w[4].length>1)A(c.previousSibling,"v0r.p(this,Z"+w[0]+")");
 w[2]+=1;
 w[1]+=5;
 }
@@ -72,24 +72,20 @@ h+='<div class=n>'+s+'</div><div class="g r">'+n+'('+y+')</div>';
 return h;
 }
 function R(c){
-c.removeAttribute("onclick");
-var s =c.style;
-s.color="gray";
-s.cursor="default";
+c.setAttribute("onclick","javascript:void(0);");
+c.className="e";
 }
 function A(c,f){
 c.setAttribute("onclick",f);
-var s =c.style;
-s.color="";
-s.cursor="pointer";
+c.className="n";
 }
 function W(){
 var w=window.innerWidth||document.documentElement.clientWidth||document.body.clientWidth;
 return parseInt(w*0.8);
 }
-function z(){
-var g=document.getElementsByTagName("img");
-var a=document.getElementsByTagName("audio");
+function z(t){
+var g=t.getElementsByTagName("img");
+var a=t.getElementsByTagName("audio");
 var w=W();
 for(var i=0;i<g.length;i++)
 if(g[i].width>w)
@@ -140,7 +136,9 @@ function d(){
 if(Z)
 return;
 Z=new Array();
-z();
+var f=document.getElementsByTagName("fieldset");
+for(var i=0;i<f.length;i++)
+if(f[i].className=="a")z(f[i]);
 if(!window.ActiveXObject&&window.addEventListener)
 window.addEventListener("resize",z,false);
 if(window.addEventListener)
@@ -150,7 +148,7 @@ var s="";
 var a=["All Sources","Fiction","Arts/Culture","News","Business","Sports","Science/Medicine","Technology"];
 for(var i=0;i<a.length;i++)
 	s+='<span onclick="v0r.c(this,event,'+i+',Z#)"class=f>'+a[i]+'</span>';
-s='<span id="I9l"onclick="v0r.e(this,event)"class="p k">All Sources</span><div id="mIq"class=f>'+s+'</div><span class="p q"><a href="javascript:void(0);"style="color:gray"class=q>&lt;Prev</a><span class=j>|</span><a href="javascript:void(0);"onclick="v0r.n(this,Z#)"class=t>Next&gt;</a></span>';
+s='<span id="I9l"onclick="v0r.e(this,event)"class="p k">All Sources</span><div id="mIq"class=f>'+s+'</div><span class="p q"><span onclick="javascript:void(0);"style="margin-left:.4em"class=e>&lt;Prev</span><span onclick="v0r.n(this,Z#)"style="text-align:right;border-left:1px solid gray"class=n>Next&gt;</span></span>';
 var u=document.getElementsByTagName("div");
 var c=0;
 var t=[];
@@ -178,10 +176,6 @@ d=u[i].childNodes;
 x_(d[d.length-1],0);
 }
 }
-var h=document.getElementsByTagName("a");
-for(var i=0;i<h.length;i++)
-if(h[i].onclick)
-h[i].href="javascript:void(0);";
 }
 if(!Z){
 if(window.addEventListener){
@@ -238,10 +232,12 @@ a.play();
 }
 },
 v:function(c,f){
-R(c);
-c.style.outline="1px dotted gray";
+c.removeAttribute("onclick");
+var s=c.style;
+s.cursor="default";
+s.outline="1px dotted gray";
 var u="http://s3.amazonaws.com/audio.vocabulary.com/1.0/us/"+f+".mp3";
-var b=function(){c.style.outline="";A(c,"v0r.v(this,'"+f+"')");};
+var b=function(){s.cursor="pointer";s.outline="";c.setAttribute("onclick","v0r.v(this,'"+f+"')");};
 var t=setTimeout(b,2000);
 try{
 with(document.createElement("audio")){
@@ -258,7 +254,7 @@ n:function(c,w){
 if(w[2]<w[4].length){
 w[2]+=1;
 c.parentNode.nextSibling.innerHTML=w[4][w[2]-1];
-A(c.previousSibling.previousSibling,"v0r.p(this,Z"+w[0]+")");
+A(c.previousSibling,"v0r.p(this,Z"+w[0]+")");
 }else{
 g(c,w);
 }
@@ -267,7 +263,7 @@ p:function(c,w){
 if(w[2]>1){
 w[2]-=1;
 c.parentNode.nextSibling.innerHTML=w[4][w[2]-1];
-A(c.nextSibling.nextSibling,"v0r.n(this,Z"+w[0]+")");
+A(c.nextSibling,"v0r.n(this,Z"+w[0]+")");
 }
 if(w[2]<=1){
 R(c);
@@ -286,7 +282,7 @@ n.style.display="none";
 var p=n.previousSibling;
 p.style.visibility="visible";
 p.innerText=c.innerText;
-g(n.nextSibling.childNodes[2],w);
+g(n.nextSibling.childNodes[1],w);
 },
 e:function(c,v){
 v=v?v:window.event;
