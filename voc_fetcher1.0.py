@@ -681,7 +681,7 @@ class WordData:
             style['span.r'] = 'color:gray;font-size:90%'
             style['p.q'] = 'margin:0.3em 0'
             style['p.i'] = 'text-indent:1.2em;margin:0.3em 0'
-            style['div.i_'] = 'overflow:hidden'
+            style['div.i_'] = 'overflow:hidden;-webkit-text-size-adjust:100%'
             style['img.i_, img.j_'] = 'width:16px;padding:0 1ex;position:relative;top:1ex;left:50%;margin-left:-1ex;cursor:pointer'
             style['img.i_:hover, img.j_:hover'] = 'background-color:#F2F2F2'
             style['img.j_'] = 'transform:scaleY(-1);-webkit-transform:scaleY(-1);filter:FlipV'
